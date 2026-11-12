@@ -3139,100 +3139,93 @@
       }
     }
 
-    function empaquetarNiimbot(cmd, payload = []) {
-      const p = [cmd, payload.length, ...payload];
-      let check = 0;
-      for (let b of p) check ^= b;
-      return new Uint8Array([0x55, 0x55, ...p, check, 0xaa, 0xaa]);
-    }
+    // =========================================================================
+    // MOTOR OFICIAL DE IMPRESIÓN BLUETOOTH BLE PARA NIIMBOT B1 (TABLET / MÓVIL / PC)
+    // =========================================================================
+    let NIIMBOT_BLE_CLIENT = null;
+    let NIIMBOT_LIB_MOD = null;
 
-    const delayMs = ms => new Promise(res => setTimeout(res, ms));
+    async function cargarLibreriaNiimbotOficial() {
+      if (NIIMBOT_LIB_MOD) return NIIMBOT_LIB_MOD;
+      NIIMBOT_LIB_MOD = await import("https://cdn.jsdelivr.net/npm/@mmote/niimbluelib@0.49.1/+esm");
+      return NIIMBOT_LIB_MOD;
+    }
 
     async function imprimirEtiquetaBluetooth() {
       const msg = document.getElementById("etq-msg");
+      const btnBt = document.getElementById("btn-print-bt");
       try {
         if (!navigator.bluetooth) {
-          Swal.fire("Bluetooth no soportado", "Usa Chrome en Android o PC con Bluetooth.", "warning");
+          Swal.fire(
+            "Navegador sin Web Bluetooth",
+            "Abre la página en Google Chrome en tu Tablet Android o PC y activa el Bluetooth y la Ubicación.",
+            "warning"
+          );
           return;
         }
+
+        if (btnBt) btnBt.disabled = true;
         msg.className = "small fw-bold text-center mt-2 text-primary";
-        msg.textContent = "Buscando Niimbot B1...";
+        msg.textContent = "Cargando controlador Bluetooth Niimbot B1...";
 
-        const serviciosNiimbot = [
-          "0000e7ce-0000-1000-8000-00805f9b34fb",
-          "0000e7fe-0000-1000-8000-00805f9b34fb",
-          "0000fee7-0000-1000-8000-00805f9b34fb",
-          "49535343-fe7d-4ae5-8fa9-9fafd205e455"
-        ];
+        const lib = await cargarLibreriaNiimbotOficial();
+        const { NiimbotBluetoothClient, ImageEncoder, PageColorType } = lib;
 
-        const device = await navigator.bluetooth.requestDevice({
-          acceptAllDevices: true,
-          optionalServices: serviciosNiimbot
+        if (!NIIMBOT_BLE_CLIENT) {
+          NIIMBOT_BLE_CLIENT = new NiimbotBluetoothClient();
+          NIIMBOT_BLE_CLIENT.on("disconnect", () => {
+            if (btnBt) {
+              btnBt.innerHTML = '<i class="bi bi-bluetooth me-1"></i>Imprimir por Bluetooth';
+            }
+          });
+        }
+
+        // Si aún no está conectada en esta sesión, abrir selector Bluetooth de la tablet y negociar con la B1
+        if (!NIIMBOT_BLE_CLIENT.isConnected()) {
+          msg.textContent = "Selecciona tu impresora Niimbot B1 en la ventana Bluetooth...";
+          await NIIMBOT_BLE_CLIENT.connect();
+        }
+
+        if (btnBt) {
+          btnBt.innerHTML = '<i class="bi bi-bluetooth me-1"></i>Imprimir por Bluetooth (Conectada)';
+        }
+
+        msg.textContent = "Preparando etiqueta (384×240 px) y enviando a Niimbot B1...";
+        const canvas = document.getElementById("labelCanvas");
+
+        // Detectar dirección y modelo (para Niimbot B1 el cabezal es de 384px y dirección "top")
+        const meta = NIIMBOT_BLE_CLIENT.getModelMetadata ? NIIMBOT_BLE_CLIENT.getModelMetadata() : null;
+        const printDirection = (meta && meta.printDirection) ? meta.printDirection : "top";
+        const taskType = (NIIMBOT_BLE_CLIENT.getPrintTaskType && NIIMBOT_BLE_CLIENT.getPrintTaskType()) || "B1";
+
+        const colorMode = (PageColorType && PageColorType.SingleColor !== undefined) ? PageColorType.SingleColor : 0;
+        const encodedImage = ImageEncoder.encodeCanvas(canvas, colorMode, printDirection);
+
+        const printTask = NIIMBOT_BLE_CLIENT.protocol.newPrintTask(taskType, {
+          totalPages: 1,
+          density: 3,
+          labelType: 1,
+          statusPollIntervalMs: 100,
+          statusTimeoutMs: 8000,
+          pageColor: colorMode
         });
 
-        msg.textContent = "Conectando a la impresora...";
-        const server = await device.gatt.connect();
-
-        let service = null;
-        for (let uuid of serviciosNiimbot) {
-          try {
-            service = await server.getPrimaryService(uuid);
-            if (service) break;
-          } catch (e) {}
-        }
-        if (!service) throw new Error("No se encontró un canal Bluetooth compatible.");
-
-        const characteristics = await service.getCharacteristics();
-        const writeChar = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
-        if (!writeChar) throw new Error("Canal de escritura no disponible.");
-
-        msg.textContent = "Imprimiendo...";
-        const canvas = document.getElementById("labelCanvas");
-        const ctx = canvas.getContext("2d");
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const w = canvas.width, h = canvas.height;
-        const bytesPerLine = w / 8;
-        const bitmap = new Uint8Array(bytesPerLine * h);
-        const umbral = 160;
-
-        for (let y = 0; y < h; y++) {
-          for (let x = 0; x < w; x++) {
-            const i = (y * w + x) * 4;
-            const brillo = (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2]) / 3;
-            if (brillo < umbral) {
-              bitmap[y * bytesPerLine + (x >> 3)] |= (1 << (7 - (x % 8)));
-            }
-          }
-        }
-
-        await writeChar.writeValue(empaquetarNiimbot(0x01, [0x01]));
-        await delayMs(20);
-        await writeChar.writeValue(empaquetarNiimbot(0x21, [0x01]));
-        await delayMs(20);
-        await writeChar.writeValue(empaquetarNiimbot(0x23, [0x01]));
-        await delayMs(20);
-        await writeChar.writeValue(empaquetarNiimbot(0x03, [0x01]));
-        await delayMs(20);
-
-        for (let line = 0; line < h; line++) {
-          const start = line * bytesPerLine;
-          const slice = Array.from(bitmap.slice(start, start + bytesPerLine));
-          const payload = [(line >> 8) & 0xff, line & 0xff, ...slice];
-          await writeChar.writeValue(empaquetarNiimbot(0x85, payload));
-          await delayMs(10);
-        }
-
-        await writeChar.writeValue(empaquetarNiimbot(0xE3, [0x01]));
-        await delayMs(20);
-        await writeChar.writeValue(empaquetarNiimbot(0xF3, [0x01]));
-        await delayMs(20);
-        await writeChar.writeValue(empaquetarNiimbot(0x0F, [0x01]));
+        await printTask.printInit();
+        await printTask.printPage(encodedImage, 1);
+        await printTask.waitForFinished();
 
         msg.className = "small fw-bold text-center mt-2 text-success";
-        msg.textContent = "¡Etiqueta enviada a impresión!";
+        msg.textContent = "✅ ¡Etiqueta impresa por Bluetooth en Niimbot B1!";
       } catch (err) {
+        console.error("Error Bluetooth Niimbot:", err);
+        // Si se perdió la conexión a mitad del envío, limpiar cliente para reconectar limpio al siguiente toque
+        if (NIIMBOT_BLE_CLIENT && (!NIIMBOT_BLE_CLIENT.isConnected() || String(err.message || "").includes("GATT") || String(err.message || "").includes("Channel"))) {
+          try { await NIIMBOT_BLE_CLIENT.disconnect(); } catch (e) {}
+        }
         msg.className = "small fw-bold text-center mt-2 text-danger";
-        msg.textContent = "Fallo Bluetooth: " + err.message;
+        msg.textContent = "Fallo Bluetooth: " + (err && err.message ? err.message : String(err));
+      } finally {
+        if (btnBt) btnBt.disabled = false;
       }
     }
 
