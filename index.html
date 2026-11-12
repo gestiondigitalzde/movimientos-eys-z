@@ -1,188 +1,369 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="light">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Entradas y Salidas · Zúñiga DecoCancún</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>ERP ZUÑIGA · Entradas y Salidas</title>
+
+  <!-- Tipografía y Librerías Oficiales del ERP ZUÑIGA -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
   <style>
     :root {
       --color-primary: #00a9e0;
-      --color-primary-dark: #008cba;
-      --color-navy: #003366;
-      --bg-base: #f0f4f8;
+      --color-primary-hover: #008cba;
+      --color-accent: #0066cc;
+      --bg-base: #eef4f8;
+      --bg-panel: #f8fafc;
       --card-bg: #ffffff;
       --text-main: #1e293b;
       --text-muted: #64748b;
       --border-color: #e2e8f0;
       --input-bg: #f8fafc;
+      --input-border: #cbd5e1;
+      --shadow-soft: 0 4px 16px rgba(15, 23, 42, 0.06);
     }
+
     [data-theme="dark"] {
-      --bg-base: #0f172a;
+      --bg-base: #0b1120;
+      --bg-panel: #0f172a;
       --card-bg: #1e293b;
       --text-main: #f1f5f9;
       --text-muted: #94a3b8;
       --border-color: #334155;
       --input-bg: #0f172a;
+      --input-border: #475569;
+      --shadow-soft: 0 6px 20px rgba(0, 0, 0, 0.35);
     }
+
+    * { box-sizing: border-box; }
+
     body {
-      font-family: 'Roboto', sans-serif;
+      font-family: 'Roboto', system-ui, -apple-system, sans-serif;
       background-color: var(--bg-base);
       color: var(--text-main);
       margin: 0;
-      padding: 0;
       min-height: 100vh;
       overflow-x: hidden;
     }
-    h1, h2, h3, h4, h5, h6, .font-heading {
-      font-family: 'Montserrat', sans-serif;
-    }
-    .bg-card { background-color: var(--card-bg) !important; color: var(--text-main) !important; }
+
     .text-dark-fix { color: var(--text-main) !important; }
+    .bg-card { background-color: var(--card-bg) !important; }
     .border-theme { border-color: var(--border-color) !important; }
+    .cursor-pointer { cursor: pointer; }
+
     .input-theme {
       background-color: var(--input-bg) !important;
       color: var(--text-main) !important;
-      border: 1.5px solid var(--border-color) !important;
-      border-radius: 10px;
+      border-color: var(--input-border) !important;
     }
-    .input-theme:focus {
-      border-color: var(--color-primary) !important;
-      box-shadow: 0 0 0 3px rgba(0, 169, 224, 0.18) !important;
-    }
-    /* Navbar Superior estilo ERP */
-    .erp-topbar {
-      background: linear-gradient(135deg, #003366 0%, #004c99 100%);
-      color: #fff;
-      padding: 0.65rem 1rem;
-      position: sticky;
-      top: 0;
-      z-index: 1030;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.12);
-    }
-    /* Tarjetas del Menú Principal */
-    .hub-card {
-      background-color: var(--card-bg);
-      border: 1.5px solid var(--border-color);
-      border-radius: 18px;
-      padding: 1.35rem;
-      cursor: pointer;
-      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-      position: relative;
-      overflow: hidden;
-      height: 100%;
-    }
-    .hub-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 24px rgba(0, 51, 102, 0.12);
-      border-color: var(--color-primary);
-    }
-    .hub-icon-box {
-      width: 54px;
-      height: 54px;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.6rem;
-    }
-    /* Botón Flotante FAB */
-    .btn-fab {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #00a9e0 0%, #0077b6 100%);
-      color: #fff;
-      border: none;
-      box-shadow: 0 8px 22px rgba(0, 169, 224, 0.45);
-      font-size: 1.75rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1025;
-      transition: transform 0.2s ease;
-    }
-    .btn-fab:hover, .btn-fab:active {
-      transform: scale(1.08);
-      color: #fff;
-    }
-    /* Píldoras Switch */
-    .pill-switch-group {
-      background-color: var(--input-bg);
-      border: 1.5px solid var(--border-color);
-      border-radius: 50px;
-      padding: 4px;
-      display: inline-flex;
-      width: 100%;
-    }
-    .pill-switch-btn {
-      flex: 1;
-      border: none;
-      background: transparent;
-      color: var(--text-muted);
-      font-weight: 700;
-      font-size: 0.85rem;
-      padding: 8px 12px;
-      border-radius: 50px;
-      transition: all 0.2s ease;
-    }
-    .pill-switch-btn.active {
-      background-color: var(--color-primary);
-      color: #ffffff;
-      box-shadow: 0 3px 10px rgba(0, 169, 224, 0.3);
-    }
-    /* Pantalla PIN */
-    #pin-screen {
+
+    /* =====================================================================
+       PANTALLA DE LOGIN IDÉNTICA A ERP ZUÑIGA
+       ===================================================================== */
+    #login-screen {
       position: fixed;
       inset: 0;
-      background: linear-gradient(145deg, #001f3f 0%, #003366 55%, #005b96 100%);
-      z-index: 2000;
+      z-index: 3000;
+      background: linear-gradient(145deg, #eef6fb 0%, #dfeef7 100%);
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 16px;
+      pointer-events: auto;
     }
-    .pin-card {
-      background: var(--card-bg);
-      border-radius: 24px;
-      max-width: 390px;
+
+    #login-screen input,
+    #login-screen button,
+    #login-screen a {
+      pointer-events: auto !important;
+      user-select: text !important;
+      -webkit-user-select: text !important;
+      position: relative;
+      z-index: 2;
+    }
+
+    [data-theme="dark"] #login-screen {
+      background: linear-gradient(145deg, #0b1120 0%, #1e293b 100%);
+    }
+
+    .login-card-erp {
       width: 100%;
-      padding: 28px 24px;
-      box-shadow: 0 20px 45px rgba(0,0,0,0.35);
+      max-width: 380px;
+      background: var(--card-bg);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 18px 45px rgba(0, 80, 120, 0.14);
+      border: 1px solid var(--border-color);
     }
-    .pin-dot {
-      width: 16px;
-      height: 16px;
+
+    .login-header-erp {
+      background-color: #00a9e0;
+      padding: 28px 20px 24px;
+      text-align: center;
+      color: #ffffff;
+    }
+
+    .login-logo-circle {
+      width: 96px;
+      height: 96px;
       border-radius: 50%;
-      border: 2px solid var(--color-primary);
+      background: #ffffff;
+      padding: 4px;
+      margin: 0 auto 14px;
+      box-shadow: 0 0 22px rgba(255, 255, 255, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .login-logo-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 50%;
+    }
+
+    .login-header-erp h1 {
+      font-size: 1.75rem;
+      font-weight: 400;
+      letter-spacing: 1px;
+      margin: 0 0 12px;
+    }
+
+    .login-module-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background-color: #003459;
+      color: #ffffff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 6px 16px;
+      border-radius: 999px;
+      letter-spacing: 0.4px;
+    }
+
+    .login-body-erp {
+      padding: 26px 26px 22px;
+    }
+
+    .login-label-erp {
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #334155;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    [data-theme="dark"] .login-label-erp {
+      color: #cbd5e1;
+    }
+
+    .login-input-erp {
+      height: 44px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background-color: #f8fafc;
+      text-align: center;
+      font-size: 0.92rem;
+    }
+
+    .btn-login-erp {
+      width: 100%;
+      height: 44px;
+      background-color: #00a9e0;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      letter-spacing: 0.4px;
+      transition: background 0.2s ease, transform 0.1s ease;
+    }
+
+    .btn-login-erp:hover {
+      background-color: #008cba;
+    }
+
+    /* =====================================================================
+       BARRA SUPERIOR AZUL CELESTE DEL ERP ZUÑIGA
+       ===================================================================== */
+    .erp-navbar {
+      background-color: #00a9e0;
+      color: #ffffff;
+      min-height: 54px;
+      padding: 6px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 1030;
+    }
+
+    .erp-brand-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #ffffff;
+      padding: 2px;
+      object-fit: contain;
+    }
+
+    .erp-sede-pill {
+      background-color: rgba(255, 255, 255, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      color: #ffffff;
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .erp-user-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255, 255, 255, 0.85);
+      background: #ffffff;
+    }
+
+    /* =====================================================================
+       MARCO PRINCIPAL Y TARJETAS VERTICALES DE ENTRADAS Y SALIDAS
+       ===================================================================== */
+    .erp-main-wrapper {
+      padding: 14px;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+
+    .erp-shell-card {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      min-height: calc(100vh - 86px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .erp-breadcrumb-bar {
+      background-color: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.8rem;
+    }
+
+    .erp-subbar {
+      background-color: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .module-card-erp {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 16px 20px;
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+
+    .module-card-erp:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(0, 169, 224, 0.12);
+      border-color: var(--color-primary);
+    }
+
+    .icon-box-erp {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    /* =====================================================================
+       PÍLDORAS DE TRASLADOS (ANDÉN | EN RUTA | HISTORIAL)
+       ===================================================================== */
+    .traslados-pill-container {
+      display: inline-flex;
+      background-color: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 999px;
+      padding: 3px;
+      gap: 4px;
+    }
+
+    .btn-pill-traslado {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 0.82rem;
+      padding: 6px 16px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       transition: all 0.15s ease;
     }
-    .pin-dot.filled {
+
+    .btn-pill-traslado.active {
       background-color: var(--color-primary);
-      transform: scale(1.15);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 169, 224, 0.3);
     }
-    .numpad-btn {
+
+    /* =====================================================================
+       BOTÓN FLOTANTE (+) Y AUTOCOMPLETADO
+       ===================================================================== */
+    .fab-btn {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      width: 58px;
       height: 58px;
-      border-radius: 16px;
-      font-size: 1.35rem;
-      font-weight: 700;
-      border: 1.5px solid var(--border-color);
-      background-color: var(--input-bg);
-      color: var(--text-main);
-      transition: all 0.12s ease;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #00a9e0, #0284c7);
+      color: #ffffff;
+      border: none;
+      box-shadow: 0 10px 24px rgba(0, 169, 224, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.65rem;
+      z-index: 1020;
+      transition: transform 0.15s ease;
     }
-    .numpad-btn:active {
-      background-color: var(--color-primary);
-      color: #fff;
-      transform: scale(0.96);
-    }
-    /* Autocomplete Dropdown */
+
+    .fab-btn:hover { transform: scale(1.07); }
+
     .suggest-box {
       position: absolute;
       top: 100%;
@@ -191,497 +372,643 @@
       z-index: 1080;
       max-height: 230px;
       overflow-y: auto;
-      background-color: var(--card-bg);
-      border: 1.5px solid var(--color-primary);
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
       border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
       margin-top: 4px;
     }
+
     .suggest-item {
       padding: 8px 12px;
-      border-bottom: 1px solid var(--border-color);
       cursor: pointer;
+      border-bottom: 1px solid var(--border-color);
       font-size: 0.84rem;
     }
+
     .suggest-item:hover {
-      background-color: rgba(0, 169, 224, 0.12);
+      background-color: rgba(0, 169, 224, 0.1);
     }
-    /* Etiqueta Canvas */
-    .label-canvas-wrap {
-      background: #e2e8f0;
-      padding: 12px;
+
+    /* Lienzo Térmico Niimbot B1 (50x30 mm -> 384x240 px) */
+    .canvas-wrapper {
+      background: #cbd5e1;
       border-radius: 14px;
-      text-align: center;
+      padding: 14px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: auto;
     }
+
     #labelCanvas {
-      border: 2px solid #000;
-      background: #fff;
+      background: #ffffff;
+      border-radius: 6px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
       max-width: 100%;
       height: auto;
-      border-radius: 4px;
+      image-rendering: pixelated;
     }
-    @media (max-width: 576px) {
-      .hub-card { padding: 1rem; }
-      .btn-fab { width: 56px; height: 56px; bottom: 18px; right: 18px; }
+    /* Reglas nativas de impresión térmica USB para evitar el error de Chrome en iframes/popups */
+    #print-only-area {
+      display: none;
+    }
+
+    @media print {
+      @page {
+        margin: 0 !important;
+      }
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        min-height: 0 !important;
+        height: auto !important;
+      }
+      body > *:not(#print-only-area) {
+        display: none !important;
+      }
+      #print-only-area {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 50mm !important;
+        height: 30mm !important;
+        page-break-after: avoid;
+      }
+      #print-only-area img {
+        display: block !important;
+        width: 50mm !important;
+        height: 30mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        image-rendering: pixelated;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- ===================================================================== -->
-  <!-- 1. PANTALLA DE PIN DE SEGURIDAD (CON MEMORIA EN EL NAVEGADOR)         -->
-  <!-- ===================================================================== -->
-  <div id="pin-screen" class="d-none">
-    <div class="pin-card text-center">
-      <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width:64px;height:64px;background:rgba(0,169,224,0.14);color:var(--color-primary);">
-        <i class="bi bi-shield-lock-fill fs-2"></i>
-      </div>
-      <h5 class="fw-bold mb-1 text-dark-fix">Zúñiga DecoCancún</h5>
-      <p class="small text-muted mb-3">Ingresa tu PIN de 6 dígitos para acceder</p>
-
-      <div class="d-flex justify-content-center gap-3 my-3" id="pin-dots">
-        <div class="pin-dot"></div>
-        <div class="pin-dot"></div>
-        <div class="pin-dot"></div>
-        <div class="pin-dot"></div>
-        <div class="pin-dot"></div>
-        <div class="pin-dot"></div>
+  <!-- =====================================================================
+       1. PANTALLA DE LOGIN OFICIAL DEL ERP ZUÑIGA
+       ===================================================================== -->
+  <div id="login-screen" class="d-none">
+    <div class="login-card-erp">
+      <div class="login-header-erp">
+        <div class="login-logo-circle">
+          <img src="https://drive.google.com/thumbnail?id=1eFvxd-Z325JIwTU1VNFm-8fgX_twcIO0&sz=w200"
+               onerror="this.src='https://cdn-icons-png.flaticon.com/512/1041/1041883.png'"
+               alt="Zúñiga Deco Cancún">
+        </div>
+        <h1>ERP ZUÑIGA</h1>
+        <div class="login-module-badge">
+          <i class="fa-solid fa-boxes-stacked"></i>
+          <span>ERP ZUÑIGA</span>
+        </div>
       </div>
 
-      <div id="pin-error-msg" class="text-danger small fw-bold mb-2" style="min-height:20px;"></div>
+      <div class="login-body-erp">
+        <form id="form-login-erp" onsubmit="iniciarSesionERP(event)">
+          <div class="mb-3">
+            <label class="login-label-erp">EMAIL OPERACIÓN</label>
+            <input type="email" id="login-email" class="form-control login-input-erp input-theme" placeholder="usuario@zunigadeco.com" required>
+          </div>
 
-      <div class="row g-2 mt-1">
-        <div class="col-4"><button type="button" class="numpad-btn w-100" onclick="presionarDigitoPin('1')">1</button></div>
-        <div class="col-4"><button type="button" class="numpad-btn w-100" onclick="presionarDigitoPin('2')">2</button></div>
-        <div class="col-4"><button type="button" class="numpad-btn w-100" onclick="presionarDigitoPin('3')">3</button></div>
-        <div class="col-4"><button type="button" class="numpad-btn w-100" onclick="presionarDigitoPin('4')">4</button></div>
-        <div class="col-4"><button type="button" class="numpad-btn w-100" onclick="presionarDigitoPin('5')">5</button></div>
-        <div class="col-4"><button type="button" class="numpad-btn w-100" onclick="presionarDigitoPin('6')">6</button></div>
-        <div class="col-4"><button type="button" class="numpad-btn w-100" onclick="presionarDigitoPin('7')">7</button></div>
-        <div class="col-4"><button type="button" class="numpad-btn w-100" onclick="presionarDigitoPin('8')">8</button></div>
-        <div class="col-4"><button type="button" class="numpad-btn w-100" onclick="presionarDigitoPin('9')">9</button></div>
-        <div class="col-4"><button type="button" class="numpad-btn w-100 text-danger" onclick="limpiarPin()"><i class="bi bi-x-lg"></i></button></div>
-        <div class="col-4"><button type="button" class="numpad-btn w-100" onclick="presionarDigitoPin('0')">0</button></div>
-        <div class="col-4"><button type="button" class="numpad-btn w-100 text-secondary" onclick="borrarUltimoPin()"><i class="bi bi-backspace"></i></button></div>
+          <div class="mb-3">
+            <label class="login-label-erp">PIN DE ACCESO</label>
+            <div class="input-group">
+              <input type="password" id="login-pin" class="form-control login-input-erp input-theme" maxlength="6" inputmode="numeric" placeholder="••••" required>
+              <button class="btn btn-outline-secondary" type="button" onclick="alternarVerPinLogin()" style="border-color:#cbd5e1;">
+                <i class="bi bi-eye-fill" id="icono-ojo-pin"></i>
+              </button>
+            </div>
+          </div>
+
+          <div id="login-error-msg" class="text-danger small fw-bold text-center mb-2" style="min-height:18px;"></div>
+
+          <button type="submit" class="btn-login-erp shadow-sm" id="btn-submit-login">
+            <i class="bi bi-box-arrow-in-right me-1"></i> INICIAR SESIÓN
+          </button>
+        </form>
+
+        <div class="text-center mt-3">
+          <a href="#" onclick="abrirModalRecuperarPin(); return false;" class="text-decoration-none small fw-semibold" style="color: var(--color-primary);">
+            ¿Olvidaste tu PIN?
+          </a>
+
+          <div class="mt-4 opacity-50" style="font-size: 0.65rem; letter-spacing: 0.5px;">
+            <p class="mb-0 text-uppercase">DISEÑADO Y DESARROLLADO POR</p>
+            <p class="fw-bold mb-0">Jhoan Usquiano</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ===================================================================== -->
-  <!-- 2. BARRA SUPERIOR ESTILO ERP                                          -->
-  <!-- ===================================================================== -->
-  <header class="erp-topbar d-flex align-items-center justify-content-between">
+  <!-- =====================================================================
+       2. BARRA SUPERIOR AZUL CELESTE DEL ERP ZUÑIGA
+       ===================================================================== -->
+  <header class="erp-navbar">
     <div class="d-flex align-items-center gap-2">
-      <button id="btn-volver-menu" class="btn btn-sm btn-light bg-opacity-10 text-white border-0 rounded-pill px-3 d-none" onclick="navegarModulo('menu')">
-        <i class="bi bi-arrow-left me-1"></i>Menú
-      </button>
-      <div>
-        <div class="fw-bold leading-tight d-flex align-items-center gap-2" style="font-size:1rem;">
-          <i class="bi bi-boxes text-info"></i>
-          <span id="topbar-titulo">Control Entradas y Salidas</span>
-        </div>
-        <small class="opacity-75 d-block" style="font-size:0.7rem;" id="topbar-subtitulo">Zúñiga DecoCancún</small>
-      </div>
+      <img src="https://drive.google.com/thumbnail?id=1eFvxd-Z325JIwTU1VNFm-8fgX_twcIO0&sz=w200"
+           onerror="this.src='https://cdn-icons-png.flaticon.com/512/1041/1041883.png'"
+           class="erp-brand-logo cursor-pointer"
+           onclick="navegarModulo('menu')"
+           alt="Logo">
+      <span class="fw-bold fs-6 tracking-wide cursor-pointer" onclick="navegarModulo('menu')">ERP ZUÑIGA</span>
+      <i class="bi bi-info-circle-fill opacity-75 ms-1 cursor-pointer" onclick="abrirModalConfigApi()" title="Configuración de conexión API"></i>
     </div>
 
-    <div class="d-flex align-items-center gap-2">
-      <span id="badge-rol-activo" class="badge rounded-pill bg-info text-dark fw-bold" style="font-size:0.7rem;">OPERATIVO</span>
-      <button class="btn btn-sm btn-outline-light border-0 rounded-circle" onclick="sincronizarDatosServidor(true)" title="Sincronizar datos">
-        <i class="bi bi-arrow-clockwise" id="icono-sync"></i>
+    <div class="d-flex align-items-center gap-3">
+      <div class="erp-sede-pill d-none d-sm-inline-flex">
+        <i class="bi bi-geo-alt-fill text-warning"></i>
+        <span>Riviera Maya</span>
+      </div>
+
+      <button class="btn btn-sm text-white border-0 p-1" onclick="alternarTema()" title="Cambiar modo claro / oscuro">
+        <i class="bi bi-moon-fill fs-6" id="icono-tema"></i>
       </button>
-      <button class="btn btn-sm btn-outline-light border-0 rounded-circle" onclick="alternarTema()" title="Cambiar tema Claro/Oscuro">
-        <i class="bi bi-moon-stars-fill" id="icono-tema"></i>
-      </button>
-      <button class="btn btn-sm btn-outline-light border-0 rounded-circle" onclick="abrirModalConfigApi()" title="Configurar conexión API">
-        <i class="bi bi-gear-fill"></i>
-      </button>
-      <button class="btn btn-sm btn-outline-light border-0 rounded-circle" onclick="cerrarSesionPin()" title="Cambiar PIN / Bloquear">
-        <i class="bi bi-lock-fill"></i>
-      </button>
+
+      <div class="d-flex align-items-center gap-2 cursor-pointer" onclick="confirmarCerrarSesion()" title="Clic para cerrar sesión">
+        <div class="text-end lh-1 d-none d-md-block">
+          <div class="fw-bold small" id="nav-user-nombre">Usuario ERP</div>
+          <small class="opacity-75" style="font-size: 0.68rem;" id="nav-user-rol">OPERACIÓN</small>
+        </div>
+        <img id="nav-user-foto"
+             src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+             onerror="this.src='https://cdn-icons-png.flaticon.com/512/3135/3135715.png'"
+             class="erp-user-avatar"
+             alt="Perfil">
+      </div>
     </div>
   </header>
 
-  <!-- Banner de estado de sincronización -->
-  <div id="barra-estado-conexion" class="bg-warning bg-opacity-25 text-dark-fix px-3 py-1 small text-center d-none">
-    <span class="spinner-border spinner-border-sm me-1"></span> Sincronizando con Google Sheets...
+  <!-- Barra de progreso de sincronización -->
+  <div id="barra-estado-conexion" class="bg-primary text-white text-center py-1 small fw-bold d-none">
+    <span class="spinner-border spinner-border-sm me-2"></span>Sincronizando con Google Sheets...
   </div>
 
-  <!-- ===================================================================== -->
-  <!-- 3. CONTENEDOR PRINCIPAL DE VISTAS                                     -->
-  <!-- ===================================================================== -->
-  <main class="container py-3 pb-5">
+  <!-- =====================================================================
+       3. CONTENEDOR GENERAL BLANCO (SHELL DE ENTRADAS Y SALIDAS)
+       ===================================================================== -->
+  <div class="erp-main-wrapper">
+    <div class="erp-shell-card">
 
-    <!-- ------------------------------------------------------------------- -->
-    <!-- VISTA 0: MENÚ PRINCIPAL (HUB)                                       -->
-    <!-- ------------------------------------------------------------------- -->
-    <section id="vista-menu">
-      <div class="mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <!-- Sub-barra 1: Breadcrumb + Sistema Activo -->
+      <div class="erp-breadcrumb-bar">
         <div>
-          <h4 class="fw-bold mb-0 text-dark-fix">Menú Principal</h4>
-          <small class="text-muted">Selecciona el módulo con el que deseas trabajar</small>
+          <span class="text-primary fw-bold cursor-pointer" onclick="navegarModulo('menu')">Inicio</span>
+          <span class="text-muted mx-1">/</span>
+          <span class="text-muted fw-semibold" id="breadcrumb-submodulo">Entradas y Salidas</span>
         </div>
-        <small class="text-muted" id="lbl-ultima-sync"></small>
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-success fw-bold small d-flex align-items-center gap-1">
+            <span style="font-size: 0.6rem;">●</span> Sistema Activo
+          </span>
+        </div>
       </div>
 
-      <div class="row g-3">
-        <!-- 1. MOVIMIENTOS (SOLO ADMIN) -->
-        <div class="col-12 col-sm-6 col-lg-4 d-none" id="card-menu-movimientos">
-          <div class="hub-card d-flex align-items-center gap-3" onclick="navegarModulo('movimientos')">
-            <div class="hub-icon-box bg-primary bg-opacity-10 text-primary flex-shrink-0">
+      <!-- Sub-barra 2: Botón Volver + Badge Módulo + Novedades + Selector Bodega + Tipos -->
+      <div class="erp-subbar">
+        <div class="d-flex align-items-center gap-2">
+          <button id="btn-volver-menu" class="btn btn-sm btn-light border rounded-pill px-3 fw-bold shadow-xs d-none" onclick="navegarModulo('menu')">
+            <i class="bi bi-arrow-left me-1"></i>Menú
+          </button>
+          <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-1 rounded-pill fw-bold">
+            <i class="bi bi-arrow-left-right me-1"></i>Entradas y Salidas
+          </span>
+          <span class="fw-bold text-dark-fix small d-none d-sm-inline" id="subbar-titulo-fase"></span>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <!-- Botón Novedades -->
+          <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold d-flex align-items-center gap-1" onclick="abrirModalNovedades()">
+            <i class="bi bi-bell-fill text-warning"></i>
+            <span class="d-none d-sm-inline">Novedades</span>
+            <span class="badge bg-danger text-white rounded-pill ms-1 d-none" id="badge-novedades-top">0</span>
+          </button>
+
+          <!-- Selector de Bodega Global -->
+          <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle rounded-pill px-3 fw-bold d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown">
+              <i class="bi bi-geo-alt-fill text-danger"></i>
+              <span id="lbl-bodega-global">BONFIL</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 p-2">
+              <li><h6 class="dropdown-header small text-uppercase fw-bold">Bodega Activa</h6></li>
+              <li><a class="dropdown-item rounded-3 fw-bold" href="#" onclick="cambiarBodegaGlobal('BONFIL'); return false;">📍 BONFIL</a></li>
+              <li><a class="dropdown-item rounded-3 fw-bold" href="#" onclick="cambiarBodegaGlobal('CEDIS'); return false;">📍 CEDIS</a></li>
+              <li><a class="dropdown-item rounded-3 fw-bold" href="#" onclick="cambiarBodegaGlobal('PUERTO'); return false;">📍 PUERTO</a></li>
+            </ul>
+          </div>
+
+          <!-- Selector visual de Tipos -->
+          <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold d-flex align-items-center gap-1" onclick="sincronizarDatosServidor(true)" title="Sincronizar ahora">
+            <i class="bi bi-funnel-fill text-primary"></i>
+            <span>Tipos: Todos</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- =================================================================
+           VISTA 0: SUBMENÚ VERTICAL DE 4 FASES OPERATIVAS (IDÉNTICO AL ERP)
+           ================================================================= -->
+      <section id="vista-menu" class="flex-grow-1 p-3 p-md-4">
+        <div class="container py-3" style="max-width: 720px;">
+          <div class="text-center mb-4">
+            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-1 rounded-pill small fw-bold mb-2">
+              <i class="bi bi-arrow-left-right me-1"></i>Fases Operativas
+            </span>
+            <h3 class="fw-bold text-dark-fix mb-1">Entradas y Salidas</h3>
+            <p class="text-muted small mb-0">Selecciona una fase operativa para comenzar.</p>
+          </div>
+
+          <div class="d-flex flex-column gap-3">
+            <!-- 1. Planeación (ODS) -->
+            <div class="module-card-erp shadow-sm" onclick="navegarModulo('ods')">
+              <div class="d-flex align-items-center gap-3">
+                <div class="icon-box-erp" style="background-color: #00a9e0;">
+                  <i class="bi bi-calendar3-week-fill"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="d-flex align-items-center gap-2">
+                    <h5 class="fw-bold mb-1 text-dark-fix">1. Planeación</h5>
+                    <span class="badge bg-info bg-opacity-10 text-primary rounded-pill small" id="badge-hub-ods">0 activas</span>
+                  </div>
+                  <p class="text-muted small mb-0">Revisión física de artículos y cantidades</p>
+                </div>
+                <i class="bi bi-chevron-right text-muted fs-5"></i>
+              </div>
+            </div>
+
+            <!-- 2. Alistamiento (Zonas de Alistamiento + Botón Etiquetas adentro) -->
+            <div class="module-card-erp shadow-sm" onclick="navegarModulo('zonas')">
+              <div class="d-flex align-items-center gap-3">
+                <div class="icon-box-erp" style="background-color: #f59e0b;">
+                  <i class="bi bi-boxes"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="d-flex align-items-center gap-2">
+                    <h5 class="fw-bold mb-1 text-dark-fix">2. Alistamiento</h5>
+                    <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill small" id="badge-hub-zonas">0 pzas</span>
+                  </div>
+                  <p class="text-muted small mb-0">Preparación y orden en zona de alistamiento</p>
+                </div>
+                <i class="bi bi-chevron-right text-muted fs-5"></i>
+              </div>
+            </div>
+
+            <!-- 3. Traslados (Andén, En Ruta, Historial + Botón Consultar Movimiento adentro) -->
+            <div class="module-card-erp shadow-sm" onclick="navegarModulo('movimientos')">
+              <div class="d-flex align-items-center gap-3">
+                <div class="icon-box-erp" style="background-color: #6366f1;">
+                  <i class="bi bi-truck"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="d-flex align-items-center gap-2">
+                    <h5 class="fw-bold mb-1 text-dark-fix">3. Traslados</h5>
+                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill small" id="badge-hub-viajes">0 activos</span>
+                  </div>
+                  <p class="text-muted small mb-0">Andén de carga, envíos en ruta y recepción de viajes</p>
+                </div>
+                <i class="bi bi-chevron-right text-muted fs-5"></i>
+              </div>
+            </div>
+
+            <!-- 4. Stock (Solo Visual -> Muestra aviso "Función disponible en el ERP") -->
+            <div class="module-card-erp shadow-sm" onclick="mostrarAvisoStockERP()">
+              <div class="d-flex align-items-center gap-3">
+                <div class="icon-box-erp" style="background-color: #a855f7;">
+                  <i class="bi bi-database-fill-gear"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <h5 class="fw-bold mb-1 text-dark-fix">4. Stock</h5>
+                  <p class="text-muted small mb-0">Reporte de Alta o Baja de Cantidad de Artículos</p>
+                </div>
+                <i class="bi bi-chevron-right text-muted fs-5"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           VISTA 1: 1. PLANEACIÓN (GESTIÓN DE ODS)
+           ================================================================= -->
+      <section id="vista-ods" class="flex-grow-1 p-3 d-none">
+        <div class="bg-card rounded-4 border border-theme p-3 mb-3 shadow-sm">
+          <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-4">
+              <label class="form-label small fw-bold text-muted mb-1"><i class="bi bi-hash me-1"></i>Buscar por # ODS, Evento o Hotel</label>
+              <input type="text" id="filtro-ods-numero" class="form-control form-control-sm rounded-pill input-theme" placeholder="Ej: 4520, Boda, Xcaret..." oninput="renderizarListaODS()">
+            </div>
+            <div class="col-6 col-md-2">
+              <label class="form-label small fw-bold text-muted mb-1">Desde fecha</label>
+              <input type="date" id="filtro-ods-desde" class="form-control form-control-sm rounded-pill input-theme" onchange="renderizarListaODS()">
+            </div>
+            <div class="col-6 col-md-2">
+              <label class="form-label small fw-bold text-muted mb-1">Hasta fecha</label>
+              <input type="date" id="filtro-ods-hasta" class="form-control form-control-sm rounded-pill input-theme" onchange="renderizarListaODS()">
+            </div>
+            <div class="col-8 col-md-3">
+              <div class="form-check form-switch pt-2">
+                <input class="form-check-input cursor-pointer" type="checkbox" id="switch-ods-inactivas" onchange="renderizarListaODS()">
+                <label class="form-check-label small fw-bold cursor-pointer" for="switch-ods-inactivas">
+                  Ver Completadas / Canceladas
+                </label>
+              </div>
+            </div>
+            <div class="col-4 col-md-1 text-end">
+              <button class="btn btn-sm btn-outline-secondary rounded-pill w-100" onclick="limpiarFiltrosODS()" title="Limpiar filtros">
+                <i class="bi bi-eraser"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="contenedor-lista-ods" class="d-flex flex-column gap-2 pb-5"></div>
+
+        <button class="fab-btn" onclick="abrirModalCrearODS()" title="Crear Nueva ODS">
+          <i class="bi bi-plus-lg"></i>
+        </button>
+      </section>
+
+      <!-- =================================================================
+           VISTA 2: 2. ALISTAMIENTO (ZONAS + BOTÓN INTERNO DE ETIQUETAS)
+           ================================================================= -->
+      <section id="vista-zonas" class="flex-grow-1 p-3 d-none">
+        <div class="bg-card rounded-4 border border-theme p-3 mb-3 shadow-sm">
+          <div class="row g-2 align-items-center">
+            <div class="col-12 col-md-4">
+              <label class="form-label small fw-bold text-muted mb-1">
+                <i class="bi bi-geo-alt-fill text-warning me-1"></i>Zona de Alistamiento Activa
+              </label>
+              <select id="select-zona-activa" class="form-select fw-bold rounded-pill input-theme" onchange="cambiarZonaActiva()">
+                <option value="BONFIL MOBILIARIO">BONFIL MOBILIARIO</option>
+                <option value="BONFIL MANUALIDADES">BONFIL MANUALIDADES</option>
+                <option value="BONFIL TELAS">BONFIL TELAS</option>
+                <option value="BONFIL ILUMINACIÓN">BONFIL ILUMINACIÓN</option>
+                <option value="CEDIS">CEDIS</option>
+                <option value="PUERTO">PUERTO</option>
+                <option value="LOCACIONES">🏨 LOCACIONES (En Evento / Hotel)</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label small fw-bold text-muted mb-1">Filtrar en esta zona</label>
+              <input type="text" id="filtro-zona-texto" class="form-control rounded-pill input-theme" placeholder="Buscar por código, artículo u ODS..." oninput="renderizarZonaActiva()">
+            </div>
+            <div class="col-12 col-md-4 d-flex align-items-center justify-content-between justify-content-md-end gap-2 pt-2 pt-md-4">
+              <span class="badge bg-primary bg-opacity-10 text-primary border border-primary rounded-pill px-3 py-2 fw-bold" id="badge-resumen-zona">0 artículos</span>
+              <!-- Botón dedicado de Etiquetas dentro de Alistamiento -->
+              <button type="button" class="btn btn-warning rounded-pill px-3 py-2 fw-bold shadow-sm d-flex align-items-center gap-1" onclick="navegarModulo('etiquetas')">
+                <i class="bi bi-qr-code-scan"></i>
+                <span>Etiquetas</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="contenedor-items-zona" class="d-flex flex-column gap-2 pb-5"></div>
+
+        <button id="btn-fab-zona" class="fab-btn" onclick="abrirModalAgregarAZona()" title="Ingresar artículos a esta Zona de Alistamiento">
+          <i class="bi bi-plus-lg"></i>
+        </button>
+      </section>
+
+      <!-- =================================================================
+           VISTA 3: 3. TRASLADOS (ANDÉN -> EN RUTA -> HISTORIAL + CONSULTAR)
+           ================================================================= -->
+      <section id="vista-movimientos" class="flex-grow-1 p-3 d-none">
+        <!-- Franja Superior de Traslados idéntica al ERP -->
+        <div class="bg-card rounded-4 border border-theme p-2 px-3 mb-3 shadow-sm d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <!-- Píldora Central: Andén | En Ruta -->
+          <div class="traslados-pill-container">
+            <button type="button" class="btn-pill-traslado active" id="pill-filtro-anden" onclick="cambiarFiltroEstadoViajes('EN_CARGA')">
+              <i class="bi bi-box-seam-fill"></i>
+              <span>Andén (Cargando)</span>
+              <span class="badge bg-white text-dark rounded-pill ms-1" id="badge-count-anden">0</span>
+            </button>
+            <button type="button" class="btn-pill-traslado" id="pill-filtro-enruta" onclick="cambiarFiltroEstadoViajes('EN_RUTA')">
               <i class="bi bi-truck"></i>
-            </div>
-            <div class="flex-grow-1">
-              <div class="d-flex align-items-center justify-content-between">
-                <h6 class="fw-bold mb-1 text-dark-fix">MOVIMIENTOS</h6>
-                <span class="badge rounded-pill bg-primary" id="badge-hub-viajes">0 en curso</span>
-              </div>
-              <p class="small text-muted mb-0">Registro de traslados de bodega, envíos a evento y recepción de viajes.</p>
-            </div>
+              <span>En Ruta</span>
+              <span class="badge bg-white text-dark rounded-pill ms-1" id="badge-count-enruta">0</span>
+            </button>
           </div>
-        </div>
 
-        <!-- 2. ODS -->
-        <div class="col-12 col-sm-6 col-lg-4">
-          <div class="hub-card d-flex align-items-center gap-3" onclick="navegarModulo('ods')">
-            <div class="hub-icon-box bg-info bg-opacity-10 text-info flex-shrink-0">
-              <i class="bi bi-calendar2-check"></i>
-            </div>
-            <div class="flex-grow-1">
-              <div class="d-flex align-items-center justify-content-between">
-                <h6 class="fw-bold mb-1 text-dark-fix">ODS</h6>
-                <span class="badge rounded-pill bg-info text-dark" id="badge-hub-ods">0 activas</span>
-              </div>
-              <p class="small text-muted mb-0">Órdenes de servicio ordenadas por fecha de montaje, filtros y creación.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 3. ZONAS DE ALISTAMIENTO -->
-        <div class="col-12 col-sm-6 col-lg-4">
-          <div class="hub-card d-flex align-items-center gap-3" onclick="navegarModulo('zonas')">
-            <div class="hub-icon-box bg-success bg-opacity-10 text-success flex-shrink-0">
-              <i class="bi bi-boxes"></i>
-            </div>
-            <div class="flex-grow-1">
-              <div class="d-flex align-items-center justify-content-between">
-                <h6 class="fw-bold mb-1 text-dark-fix">ZONAS DE ALISTAMIENTO</h6>
-                <span class="badge rounded-pill bg-success" id="badge-hub-zonas">7 zonas</span>
-              </div>
-              <p class="small text-muted mb-0">Existencias físicas en Bonfil, CEDIS, Puerto y Locaciones (Hoteles).</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 4. ETIQUETAS -->
-        <div class="col-12 col-sm-6 col-lg-4">
-          <div class="hub-card d-flex align-items-center gap-3" onclick="navegarModulo('etiquetas')">
-            <div class="hub-icon-box bg-warning bg-opacity-10 text-warning flex-shrink-0">
-              <i class="bi bi-qr-code"></i>
-            </div>
-            <div class="flex-grow-1">
-              <h6 class="fw-bold mb-1 text-dark-fix">ETIQUETAS</h6>
-              <p class="small text-muted mb-0">Impresión rápida Niimbot B1 (50x30 mm) por USB o Bluetooth.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 5. CONSULTAR MOVIMIENTO -->
-        <div class="col-12 col-sm-6 col-lg-4">
-          <div class="hub-card d-flex align-items-center gap-3" onclick="navegarModulo('consultar')">
-            <div class="hub-icon-box bg-secondary bg-opacity-10 text-secondary flex-shrink-0">
-              <i class="bi bi-clock-history"></i>
-            </div>
-            <div class="flex-grow-1">
-              <h6 class="fw-bold mb-1 text-dark-fix">CONSULTAR MOVIMIENTO</h6>
-              <p class="small text-muted mb-0">Trazabilidad por ODS, por Artículo o por entradas y salidas de Bodega.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ------------------------------------------------------------------- -->
-    <!-- VISTA 1: MOVIMIENTOS (EXCLUSIVO ADMIN)                              -->
-    <!-- ------------------------------------------------------------------- -->
-    <section id="vista-movimientos" class="d-none">
-      <div class="bg-card rounded-4 border border-theme p-3 mb-3 shadow-sm">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-          <div>
-            <h5 class="fw-bold mb-0 text-dark-fix"><i class="bi bi-truck text-primary me-2"></i>Viajes y Movimientos</h5>
-            <small class="text-muted">Los envíos a evento pasan directo al hotel; al marcarlos completados regresan a bodega.</small>
-          </div>
-          <div class="d-flex align-items-center gap-2">
-            <input type="text" id="filtro-viajes-texto" class="form-control form-control-sm input-theme" placeholder="Buscar viaje, ODS, hotel..." oninput="renderizarListaViajes()" style="width:190px;">
-            <button type="button" id="btn-toggle-historial-viajes" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold" onclick="toggleHistorialViajes()">
+          <!-- Botones derechos: Historial + Consultar Movimiento -->
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold" id="btn-toggle-historial-viajes" onclick="cambiarFiltroEstadoViajes('HISTORIAL')">
               <i class="bi bi-clock-history me-1"></i>Historial
             </button>
-          </div>
-        </div>
-      </div>
-
-      <div id="contenedor-lista-viajes" class="d-flex flex-column gap-3"></div>
-
-      <!-- Botón flotante + para crear Nuevo Movimiento / Viaje -->
-      <button type="button" class="btn-fab" onclick="abrirModalNuevoViaje()" title="Nuevo Movimiento / Viaje">
-        <i class="bi bi-plus-lg"></i>
-      </button>
-    </section>
-
-    <!-- ------------------------------------------------------------------- -->
-    <!-- VISTA 2: ODS                                                        -->
-    <!-- ------------------------------------------------------------------- -->
-    <section id="vista-ods" class="d-none">
-      <!-- Franja de filtros -->
-      <div class="bg-card rounded-4 border border-theme p-3 mb-3 shadow-sm">
-        <div class="row g-2 align-items-end">
-          <div class="col-12 col-md-4">
-            <label class="form-label small fw-bold mb-1 text-muted">BUSCAR POR # DE ODS O EVENTO</label>
-            <div class="input-group input-group-sm">
-              <span class="input-group-text input-theme"><i class="bi bi-search"></i></span>
-              <input type="text" id="filtro-ods-numero" class="form-control input-theme" placeholder="Ej: 20261102... o Boda" oninput="renderizarListaODS()">
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <label class="form-label small fw-bold mb-1 text-muted">DESDE FECHA</label>
-            <input type="date" id="filtro-ods-desde" class="form-control form-control-sm input-theme" onchange="renderizarListaODS()">
-          </div>
-          <div class="col-6 col-md-3">
-            <label class="form-label small fw-bold mb-1 text-muted">HASTA FECHA</label>
-            <input type="date" id="filtro-ods-hasta" class="form-control form-control-sm input-theme" onchange="renderizarListaODS()">
-          </div>
-          <div class="col-12 col-md-2 d-flex align-items-center justify-content-between gap-2 pt-2 pt-md-0">
-            <div class="form-check form-switch m-0">
-              <input class="form-check-input cursor-pointer" type="checkbox" id="switch-ods-inactivas" onchange="renderizarListaODS()">
-              <label class="form-check-label small fw-bold cursor-pointer" for="switch-ods-inactivas" style="font-size:0.75rem;">Completadas / Canceladas</label>
-            </div>
-            <button class="btn btn-sm btn-outline-secondary rounded-circle" onclick="limpiarFiltrosODS()" title="Limpiar filtros">
-              <i class="bi bi-eraser"></i>
+            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold shadow-xs" onclick="navegarModulo('consultar')">
+              <i class="bi bi-search me-1"></i>Consultar Movimiento
             </button>
           </div>
         </div>
-      </div>
 
-      <div id="contenedor-lista-ods" class="d-flex flex-column gap-2"></div>
-
-      <!-- Botón flotante + para Crear ODS -->
-      <button type="button" class="btn-fab" onclick="abrirModalCrearODS()" title="Crear ODS">
-        <i class="bi bi-plus-lg"></i>
-      </button>
-    </section>
-
-    <!-- ------------------------------------------------------------------- -->
-    <!-- VISTA 3: ZONAS DE ALISTAMIENTO                                      -->
-    <!-- ------------------------------------------------------------------- -->
-    <section id="vista-zonas" class="d-none">
-      <div class="bg-card rounded-4 border border-theme p-3 mb-3 shadow-sm">
-        <div class="row g-2 align-items-center">
-          <div class="col-12 col-md-5">
-            <label class="form-label small fw-bold mb-1 text-muted">ZONA DE ALISTAMIENTO ACTIVA</label>
-            <select id="select-zona-activa" class="form-select fw-bold input-theme" onchange="cambiarZonaActiva()">
-              <option value="BONFIL MOBILIARIO">BONFIL MOBILIARIO</option>
-              <option value="BONFIL MANUALIDADES">BONFIL MANUALIDADES</option>
-              <option value="BONFIL TELAS">BONFIL TELAS</option>
-              <option value="BONFIL ILUMINACIÓN">BONFIL ILUMINACIÓN</option>
-              <option value="CEDIS">CEDIS</option>
-              <option value="PUERTO">PUERTO</option>
-              <option value="LOCACIONES">LOCACIONES (EN HOTEL / EVENTO)</option>
-            </select>
-          </div>
-          <div class="col-12 col-md-5">
-            <label class="form-label small fw-bold mb-1 text-muted">FILTRAR EN ESTA ZONA</label>
-            <input type="text" id="filtro-zona-texto" class="form-control input-theme" placeholder="Buscar por código, nombre, ODS o locación..." oninput="renderizarZonaActiva()">
-          </div>
-          <div class="col-12 col-md-2 text-md-end pt-2 pt-md-4">
-            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-3 py-2 rounded-pill fw-bold" id="badge-resumen-zona">0 artículos</span>
+        <!-- Buscador rápido de viajes -->
+        <div class="mb-3">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-card border-theme rounded-start-pill ps-3"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="filtro-viajes-texto" class="form-control border-theme rounded-end-pill input-theme" placeholder="Buscar viaje por folio (VJ-0001), bodega, hotel, ODS o chofer..." oninput="renderizarListaViajes()">
           </div>
         </div>
-      </div>
 
-      <div id="contenedor-items-zona" class="d-flex flex-column gap-2"></div>
+        <div id="contenedor-lista-viajes" class="d-flex flex-column gap-3 pb-5"></div>
 
-      <!-- Botón flotante + para Agregar Artículos Manualmente a la Zona seleccionada -->
-      <button type="button" id="btn-fab-zona" class="btn-fab" onclick="abrirModalAgregarAZona()" title="Agregar artículos a esta zona">
-        <i class="bi bi-plus-lg"></i>
-      </button>
-    </section>
+        <!-- Botón Flotante + para Crear Nuevo Viaje en Andén -->
+        <button class="fab-btn" onclick="abrirModalCrearCabeceraViaje()" title="Crear Nuevo Viaje en Andén">
+          <i class="bi bi-plus-lg"></i>
+        </button>
+      </section>
 
-    <!-- ------------------------------------------------------------------- -->
-    <!-- VISTA 4: ETIQUETAS NIIMBOT B1 (50x30 mm)                            -->
-    <!-- ------------------------------------------------------------------- -->
-    <section id="vista-etiquetas" class="d-none">
-      <div class="row justify-content-center">
-        <div class="col-12 col-md-8 col-lg-6">
-          <div class="bg-card rounded-4 border border-theme p-3 p-md-4 shadow-sm">
-            <div class="text-center mb-3">
-              <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1 mb-1 fw-bold">Niimbot B1 · 50x30 mm</span>
-              <h5 class="fw-bold mb-0 text-dark-fix">Generador Rápido de Etiquetas</h5>
-              <small class="text-muted">Selecciona la ODS y el artículo (por código o nombre)</small>
-            </div>
+      <!-- =================================================================
+           SUB-VISTA INTERNA DE ALISTAMIENTO: IMPRESIÓN DE ETIQUETAS NIIMBOT B1
+           ================================================================= -->
+      <section id="vista-etiquetas" class="flex-grow-1 p-3 d-none">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="fw-bold text-dark-fix mb-0">
+            <i class="bi bi-qr-code-scan text-warning me-2"></i>Generador de Etiquetas Térmicas (Niimbot B1 · 50x30 mm)
+          </h6>
+          <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold" onclick="navegarModulo('zonas')">
+            <i class="bi bi-arrow-left me-1"></i>Volver a Alistamiento
+          </button>
+        </div>
 
-            <!-- Selector de ODS -->
-            <div class="mb-3 position-relative">
-              <label class="form-label small fw-bold mb-1">1. NÚMERO DE ODS *</label>
-              <input type="text" id="etq-input-ods" class="form-control input-theme fw-bold" placeholder="Escribe o busca # de ODS..." autocomplete="off" oninput="mostrarSugerenciasODSEtiqueta(this.value)" onfocus="mostrarSugerenciasODSEtiqueta(this.value)">
-              <div id="etq-suggest-ods" class="suggest-box d-none"></div>
-              <div id="etq-info-ods" class="small text-primary fw-semibold mt-1"></div>
-            </div>
+        <div class="row g-3">
+          <div class="col-12 col-lg-5">
+            <div class="bg-card rounded-4 border border-theme p-3 shadow-sm">
+              <div class="mb-3 position-relative">
+                <label class="form-label small fw-bold">1. Número de ODS</label>
+                <input type="text" id="etq-input-ods" class="form-control input-theme fw-bold" placeholder="Escribe o elige # de ODS..." autocomplete="off" oninput="mostrarSugerenciasODSEtiqueta(this.value)" onfocus="mostrarSugerenciasODSEtiqueta(this.value)">
+                <div id="etq-suggest-ods" class="suggest-box d-none"></div>
+                <small class="text-muted d-block mt-1" id="etq-info-ods">Al elegir la ODS se toman automáticamente su Locación y Fecha.</small>
+              </div>
 
-            <!-- Buscador Bidireccional Código <-> Nombre -->
-            <div class="row g-2 mb-3">
-              <div class="col-5 position-relative">
-                <label class="form-label small fw-bold mb-1">2. CÓDIGO (C.OP) *</label>
-                <input type="text" id="etq-input-codigo" class="form-control input-theme fw-bold" placeholder="Ej: 1330" autocomplete="off" oninput="buscarArtBidireccional('etq', 'codigo', this.value)">
+              <div class="mb-3 position-relative">
+                <label class="form-label small fw-bold">2. Código del Artículo (C.OP)</label>
+                <input type="text" id="etq-input-codigo" class="form-control input-theme fw-bold text-uppercase" placeholder="Ej: S-102, M-015..." autocomplete="off" oninput="buscarArtBidireccional('etq', 'codigo', this.value)">
                 <div id="etq-suggest-codigo" class="suggest-box d-none"></div>
               </div>
-              <div class="col-7 position-relative">
-                <label class="form-label small fw-bold mb-1">NOMBRE DEL ARTÍCULO *</label>
-                <input type="text" id="etq-input-nombre" class="form-control input-theme fw-bold" placeholder="Escribe para buscar nombre..." autocomplete="off" oninput="buscarArtBidireccional('etq', 'nombre', this.value)">
+
+              <div class="mb-3 position-relative">
+                <label class="form-label small fw-bold">3. Nombre del Artículo</label>
+                <input type="text" id="etq-input-nombre" class="form-control input-theme" placeholder="Escribe para buscar por nombre..." autocomplete="off" oninput="buscarArtBidireccional('etq', 'nombre', this.value)">
                 <div id="etq-suggest-nombre" class="suggest-box d-none"></div>
               </div>
-            </div>
 
-            <button type="button" class="btn btn-dark w-100 rounded-3 fw-bold py-2 mb-3" onclick="generarEtiquetaDesdeFormulario()">
-              <i class="bi bi-qr-code-scan me-1"></i>Actualizar Vista Previa de Etiqueta
+              <button type="button" class="btn btn-primary w-100 rounded-pill py-2 fw-bold shadow-sm" onclick="generarEtiquetaDesdeFormulario()">
+                <i class="bi bi-magic me-2"></i>Generar Vista Previa de Etiqueta
+              </button>
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-7">
+            <div class="bg-card rounded-4 border border-theme p-3 shadow-sm">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="fw-bold mb-0">Vista Previa Térmica (384 × 240 px)</h6>
+                <span class="badge bg-secondary rounded-pill">Niimbot B1</span>
+              </div>
+
+              <div class="canvas-wrapper mb-3">
+                <canvas id="labelCanvas" width="384" height="240"></canvas>
+              </div>
+
+              <div id="qrContainer" style="display:none;"></div>
+
+              <div class="row g-2">
+                <div class="col-12 col-sm-6">
+                  <button type="button" id="btn-print-usb" class="btn btn-success w-100 rounded-pill py-2 fw-bold shadow-sm" onclick="imprimirEtiquetaUSB()">
+                    <i class="bi bi-usb-plug-fill me-1"></i>Imprimir por USB / PC
+                  </button>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <button type="button" id="btn-print-bt" class="btn btn-primary w-100 rounded-pill py-2 fw-bold shadow-sm" onclick="imprimirEtiquetaBluetooth()">
+                    <i class="bi bi-bluetooth me-1"></i>Imprimir por Bluetooth
+                  </button>
+                </div>
+              </div>
+              <div id="etq-msg" class="small fw-bold text-center mt-2"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           SUB-VISTA INTERNA DE TRASLADOS: CONSULTAR MOVIMIENTO (AUDITORÍA)
+           ================================================================= -->
+      <section id="vista-consultar" class="flex-grow-1 p-3 d-none">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="fw-bold text-dark-fix mb-0">
+            <i class="bi bi-journal-text text-primary me-2"></i>Consultar Historial de Movimientos
+          </h6>
+          <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold" onclick="navegarModulo('movimientos')">
+            <i class="bi bi-arrow-left me-1"></i>Volver a Traslados
+          </button>
+        </div>
+
+        <div class="bg-card rounded-4 border border-theme p-3 mb-3 shadow-sm">
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold active" id="tab-cons-ods" onclick="cambiarModoConsulta('ODS')">
+              <i class="bi bi-receipt me-1"></i>1. Buscar por ODS
             </button>
+            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold" id="tab-cons-art" onclick="cambiarModoConsulta('ARTICULO')">
+              <i class="bi bi-box-seam me-1"></i>2. Buscar por Artículo
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold" id="tab-cons-bodega" onclick="cambiarModoConsulta('BODEGA')">
+              <i class="bi bi-building me-1"></i>3. Buscar por Bodega (Entradas y Salidas)
+            </button>
+          </div>
 
-            <div class="label-canvas-wrap mb-3">
-              <canvas id="labelCanvas" width="384" height="240"></canvas>
+          <div id="panel-filtro-cons-ods" class="row g-2">
+            <div class="col-12 col-md-8">
+              <input type="text" id="cons-input-ods" class="form-control rounded-pill input-theme" placeholder="Escribe el # de ODS o nombre del evento..." oninput="ejecutarConsultaMovimientos()">
             </div>
-
-            <div class="row g-2">
-              <div class="col-6">
-                <button type="button" class="btn btn-success w-100 rounded-3 fw-bold py-2" onclick="imprimirEtiquetaUSB()">
-                  <i class="bi bi-usb-symbol me-1"></i>Imprimir USB
-                </button>
-              </div>
-              <div class="col-6">
-                <button type="button" class="btn btn-primary w-100 rounded-3 fw-bold py-2" onclick="imprimirEtiquetaBluetooth()">
-                  <i class="bi bi-bluetooth me-1"></i>Bluetooth
-                </button>
-              </div>
+            <div class="col-12 col-md-4">
+              <input type="date" id="cons-input-fecha" class="form-control rounded-pill input-theme" onchange="ejecutarConsultaMovimientos()">
             </div>
-            <div id="etq-msg" class="small fw-bold text-center mt-2" style="min-height:20px;"></div>
           </div>
-        </div>
-      </div>
-      <div id="qrContainer" class="d-none"></div>
-    </section>
 
-    <!-- ------------------------------------------------------------------- -->
-    <!-- VISTA 5: CONSULTAR MOVIMIENTO                                       -->
-    <!-- ------------------------------------------------------------------- -->
-    <section id="vista-consultar" class="d-none">
-      <div class="bg-card rounded-4 border border-theme p-3 mb-3 shadow-sm">
-        <h5 class="fw-bold mb-2 text-dark-fix"><i class="bi bi-clock-history text-primary me-2"></i>Consultar Movimientos</h5>
-
-        <!-- Switch de 3 modos de consulta -->
-        <div class="pill-switch-group mb-3">
-          <button type="button" class="pill-switch-btn active" id="tab-cons-ods" onclick="cambiarModoConsulta('ODS')">
-            <i class="bi bi-calendar2-check me-1"></i>Por ODS
-          </button>
-          <button type="button" class="pill-switch-btn" id="tab-cons-art" onclick="cambiarModoConsulta('ARTICULO')">
-            <i class="bi bi-box-seam me-1"></i>Por Artículo
-          </button>
-          <button type="button" class="pill-switch-btn" id="tab-cons-bodega" onclick="cambiarModoConsulta('BODEGA')">
-            <i class="bi bi-building me-1"></i>Por Bodega
-          </button>
-        </div>
-
-        <!-- Panel Filtro 1: Por ODS -->
-        <div id="panel-filtro-cons-ods" class="row g-2 align-items-end">
-          <div class="col-12 col-md-8 position-relative">
-            <label class="form-label small fw-bold mb-1 text-muted">NÚMERO DE ODS O NOMBRE DE EVENTO</label>
-            <input type="text" id="cons-input-ods" class="form-control input-theme" placeholder="Escribe # de ODS para ver todos sus movimientos..." oninput="ejecutarConsultaMovimientos()">
+          <div id="panel-filtro-cons-art" class="row g-2 d-none">
+            <div class="col-12 col-md-5 position-relative">
+              <input type="text" id="cons-input-codigo" class="form-control rounded-pill input-theme" placeholder="Código del artículo..." autocomplete="off" oninput="buscarArtBidireccional('cons', 'codigo', this.value); ejecutarConsultaMovimientos();">
+              <div id="cons-suggest-codigo" class="suggest-box d-none"></div>
+            </div>
+            <div class="col-12 col-md-7 position-relative">
+              <input type="text" id="cons-input-nombre" class="form-control rounded-pill input-theme" placeholder="Nombre del artículo..." autocomplete="off" oninput="buscarArtBidireccional('cons', 'nombre', this.value); ejecutarConsultaMovimientos();">
+              <div id="cons-suggest-nombre" class="suggest-box d-none"></div>
+            </div>
           </div>
-          <div class="col-12 col-md-4">
-            <label class="form-label small fw-bold mb-1 text-muted">FILTRAR FECHA (OPCIONAL)</label>
-            <input type="date" id="cons-input-fecha" class="form-control input-theme" onchange="ejecutarConsultaMovimientos()">
-          </div>
-        </div>
 
-        <!-- Panel Filtro 2: Por Artículo -->
-        <div id="panel-filtro-cons-art" class="row g-2 align-items-end d-none">
-          <div class="col-5 col-md-4 position-relative">
-            <label class="form-label small fw-bold mb-1 text-muted">CÓDIGO ARTÍCULO</label>
-            <input type="text" id="cons-input-codigo" class="form-control input-theme" placeholder="Ej: 1330" autocomplete="off" oninput="buscarArtBidireccional('cons', 'codigo', this.value); ejecutarConsultaMovimientos();">
-            <div id="cons-suggest-codigo" class="suggest-box d-none"></div>
-          </div>
-          <div class="col-7 col-md-8 position-relative">
-            <label class="form-label small fw-bold mb-1 text-muted">NOMBRE DEL ARTÍCULO</label>
-            <input type="text" id="cons-input-nombre" class="form-control input-theme" placeholder="Escribe el nombre del artículo..." autocomplete="off" oninput="buscarArtBidireccional('cons', 'nombre', this.value); ejecutarConsultaMovimientos();">
-            <div id="cons-suggest-nombre" class="suggest-box d-none"></div>
+          <div id="panel-filtro-cons-bodega" class="row g-2 d-none">
+            <div class="col-12 col-md-6">
+              <select id="cons-select-bodega" class="form-select rounded-pill input-theme fw-bold" onchange="ejecutarConsultaMovimientos()">
+                <option value="TODAS">Todas las Bodegas y Zonas</option>
+                <option value="BONFIL">Bodega BONFIL (General)</option>
+                <option value="BONFIL MOBILIARIO">BONFIL MOBILIARIO</option>
+                <option value="BONFIL MANUALIDADES">BONFIL MANUALIDADES</option>
+                <option value="BONFIL TELAS">BONFIL TELAS</option>
+                <option value="BONFIL ILUMINACIÓN">BONFIL ILUMINACIÓN</option>
+                <option value="CEDIS">Bodega CEDIS</option>
+                <option value="PUERTO">Bodega PUERTO</option>
+                <option value="LOCACIONES">LOCACIONES (Hoteles)</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-6">
+              <select id="cons-select-flujo" class="form-select rounded-pill input-theme fw-bold" onchange="ejecutarConsultaMovimientos()">
+                <option value="TODOS">Entradas y Salidas (Todos)</option>
+                <option value="ENTRADAS">Solo ENTRADAS a esta bodega</option>
+                <option value="SALIDAS">Solo SALIDAS desde esta bodega</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <!-- Panel Filtro 3: Por Bodega -->
-        <div id="panel-filtro-cons-bodega" class="row g-2 align-items-end d-none">
-          <div class="col-12 col-md-6">
-            <label class="form-label small fw-bold mb-1 text-muted">SELECCIONA BODEGA / ZONA</label>
-            <select id="cons-select-bodega" class="form-select input-theme fw-bold" onchange="ejecutarConsultaMovimientos()">
-              <option value="TODAS">Todas las Bodegas y Zonas</option>
-              <option value="BONFIL">BONFIL (Todas sus zonas)</option>
-              <option value="BONFIL MOBILIARIO">BONFIL MOBILIARIO</option>
-              <option value="BONFIL MANUALIDADES">BONFIL MANUALIDADES</option>
-              <option value="BONFIL TELAS">BONFIL TELAS</option>
-              <option value="BONFIL ILUMINACIÓN">BONFIL ILUMINACIÓN</option>
-              <option value="CEDIS">CEDIS</option>
-              <option value="PUERTO">PUERTO</option>
-              <option value="LOCACIONES">LOCACIONES (Hoteles)</option>
-            </select>
-          </div>
-          <div class="col-12 col-md-6">
-            <label class="form-label small fw-bold mb-1 text-muted">TIPO DE FLUJO</label>
-            <select id="cons-select-flujo" class="form-select input-theme" onchange="ejecutarConsultaMovimientos()">
-              <option value="TODOS">Entradas y Salidas (Todos)</option>
-              <option value="ENTRADAS">📥 Solo Entradas a esta bodega</option>
-              <option value="SALIDAS">📤 Solo Salidas de esta bodega</option>
-            </select>
-          </div>
-        </div>
-      </div>
+        <div id="contenedor-resultados-consulta" class="d-flex flex-column gap-2 pb-5"></div>
+      </section>
 
-      <div id="contenedor-resultados-consulta" class="d-flex flex-column gap-2"></div>
-    </section>
+    </div>
+  </div>
 
-  </main>
+  <!-- =====================================================================
+       MODALES OPERATIVOS DEL SISTEMA
+       ===================================================================== -->
 
-  <!-- ===================================================================== -->
-  <!-- MODALES OPERATIVOS                                                    -->
-  <!-- ===================================================================== -->
-
-  <!-- MODAL 1: CREAR / EDITAR ODS -->
+  <!-- MODAL 1: CREAR / EDITAR ODS (1. PLANEACIÓN) -->
   <div class="modal fade" id="modalODS" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content bg-card rounded-4 border-0 shadow-lg">
         <div class="modal-header border-bottom border-theme">
-          <h5 class="modal-title fw-bold" id="titulo-modal-ods"><i class="bi bi-calendar-plus text-primary me-2"></i>Crear ODS</h5>
+          <h5 class="modal-title fw-bold" id="titulo-modal-ods">
+            <i class="bi bi-calendar-plus text-primary me-2"></i>Crear ODS
+          </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <input type="hidden" id="ods-form-id-original">
           <div class="mb-3">
-            <label class="form-label small fw-bold">ODS (SOLO NÚMEROS) *</label>
-            <input type="text" inputmode="numeric" id="ods-form-id" class="form-control input-theme fw-bold" placeholder="Ej: 20261102112538" oninput="this.value = this.value.replace(/\D/g, '')">
+            <label class="form-label small fw-bold">1. Número de ODS (Solo números) *</label>
+            <input type="text" id="ods-form-id" class="form-control input-theme fw-bold" inputmode="numeric" placeholder="Ej: 4850" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
           </div>
           <div class="mb-3">
-            <label class="form-label small fw-bold">NOMBRE DEL EVENTO *</label>
-            <input type="text" id="ods-form-evento" class="form-control input-theme" placeholder="Ej: BMBR Boda Imacop">
+            <label class="form-label small fw-bold">2. Nombre del Evento *</label>
+            <input type="text" id="ods-form-evento" class="form-control input-theme" placeholder="Ej: Boda Smith / Cena Gala...">
           </div>
           <div class="mb-3">
-            <label class="form-label small fw-bold">VENDEDOR *</label>
+            <label class="form-label small fw-bold">3. Vendedor *</label>
             <select id="ods-form-vendedor" class="form-select input-theme"></select>
           </div>
           <div class="mb-3">
-            <label class="form-label small fw-bold">LOCACIÓN (HOTEL / RECINTO) *</label>
+            <label class="form-label small fw-bold">4. Locación (Hotel / Destino) *</label>
             <select id="ods-form-locacion" class="form-select input-theme"></select>
           </div>
           <div class="mb-2">
-            <label class="form-label small fw-bold">FECHA Y HORA DE MONTAJE *</label>
-            <input type="datetime-local" id="ods-form-fecha" class="form-control input-theme fw-bold">
+            <label class="form-label small fw-bold">5. Fecha y Hora de Montaje *</label>
+            <input type="datetime-local" id="ods-form-fecha" class="form-control input-theme">
           </div>
         </div>
         <div class="modal-footer border-top border-theme">
-          <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
           <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" id="btn-guardar-ods" onclick="guardarODSFormulario()">
             <i class="bi bi-check2-circle me-1"></i>Guardar ODS
           </button>
@@ -690,219 +1017,302 @@
     </div>
   </div>
 
-  <!-- MODAL 2: AGREGAR ARTÍCULOS MANUALMENTE A ZONA DE ALISTAMIENTO -->
+  <!-- MODAL 2: AGREGAR UNO O VARIOS ARTÍCULOS A ZONA DE ALISTAMIENTO -->
   <div class="modal fade" id="modalAgregarZona" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content bg-card rounded-4 border-0 shadow-lg">
         <div class="modal-header border-bottom border-theme">
           <div>
-            <h5 class="modal-title fw-bold mb-0"><i class="bi bi-box-arrow-in-down text-success me-2"></i>Agregar a Zona de Alistamiento</h5>
-            <small class="text-primary fw-bold" id="subtitulo-modal-zona"></small>
+            <h5 class="modal-title fw-bold mb-0">
+              <i class="bi bi-box-arrow-in-down text-warning me-2"></i>Ingresar Artículos a Zona de Alistamiento
+            </h5>
+            <small class="text-muted fw-bold" id="subtitulo-modal-zona"></small>
           </div>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <!-- Captura de renglón para añadir a la tanda -->
           <div class="p-3 rounded-4 border border-theme mb-3" style="background-color: var(--input-bg);">
             <div class="row g-2 align-items-end">
-              <div class="col-4 col-md-3 position-relative">
-                <label class="form-label small fw-bold mb-1">CÓDIGO *</label>
-                <input type="text" id="zona-add-codigo" class="form-control form-control-sm input-theme fw-bold" placeholder="Código..." autocomplete="off" oninput="buscarArtBidireccional('zona', 'codigo', this.value)">
+              <div class="col-12 col-md-3 position-relative">
+                <label class="form-label small fw-bold mb-1">Código *</label>
+                <input type="text" id="zona-add-codigo" class="form-control form-control-sm input-theme fw-bold text-uppercase" placeholder="Código..." autocomplete="off" oninput="buscarArtBidireccional('zona', 'codigo', this.value)">
                 <div id="zona-suggest-codigo" class="suggest-box d-none"></div>
               </div>
-              <div class="col-8 col-md-5 position-relative">
-                <label class="form-label small fw-bold mb-1">NOMBRE DEL ARTÍCULO *</label>
-                <input type="text" id="zona-add-nombre" class="form-control form-control-sm input-theme fw-bold" placeholder="Buscar por nombre..." autocomplete="off" oninput="buscarArtBidireccional('zona', 'nombre', this.value)">
+              <div class="col-12 col-md-5 position-relative">
+                <label class="form-label small fw-bold mb-1">Nombre del Artículo *</label>
+                <input type="text" id="zona-add-nombre" class="form-control form-control-sm input-theme" placeholder="Buscar nombre..." autocomplete="off" oninput="buscarArtBidireccional('zona', 'nombre', this.value)">
                 <div id="zona-suggest-nombre" class="suggest-box d-none"></div>
               </div>
-              <div class="col-5 col-md-4">
-                <label class="form-label small fw-bold mb-1">CANTIDAD *</label>
+              <div class="col-6 col-md-2">
+                <label class="form-label small fw-bold mb-1">Cantidad *</label>
                 <div class="input-group input-group-sm">
-                  <button class="btn btn-outline-secondary fw-bold px-3" type="button" onclick="ajustarInputCant('zona-add-cant', -1)">-</button>
+                  <button class="btn btn-outline-secondary" type="button" onclick="ajustarInputCant('zona-add-cant', -1)">-</button>
                   <input type="number" id="zona-add-cant" class="form-control text-center fw-bold input-theme" value="1" min="1">
-                  <button class="btn btn-outline-secondary fw-bold px-3" type="button" onclick="ajustarInputCant('zona-add-cant', 1)">+</button>
+                  <button class="btn btn-outline-secondary" type="button" onclick="ajustarInputCant('zona-add-cant', 1)">+</button>
                 </div>
               </div>
-              <div class="col-7 col-md-5 position-relative">
-                <label class="form-label small fw-bold mb-1">ODS (DE ESTE ARTÍCULO) *</label>
-                <input type="text" id="zona-add-ods" class="form-control form-control-sm input-theme fw-bold" placeholder="Escribe # de ODS..." autocomplete="off" oninput="mostrarSugerenciasODSInput('zona-add-ods', 'zona-suggest-ods', 'zona-add-fecha')">
-                <div id="zona-suggest-ods" class="suggest-box d-none"></div>
-              </div>
-              <div class="col-8 col-md-5">
-                <label class="form-label small fw-bold mb-1">FECHA MONTAJE (AUTOMÁTICA)</label>
-                <input type="text" id="zona-add-fecha" class="form-control form-control-sm input-theme" readonly placeholder="Se llena al elegir ODS">
-              </div>
-              <div class="col-4 col-md-2">
-                <button type="button" class="btn btn-sm btn-primary w-100 fw-bold py-2 rounded-3" onclick="anadirRenglonColaZona()">
+              <div class="col-6 col-md-2">
+                <button type="button" class="btn btn-sm btn-primary w-100 rounded-pill fw-bold py-2" onclick="anadirRenglonColaZona()">
                   <i class="bi bi-plus-circle me-1"></i>Añadir
                 </button>
+              </div>
+
+              <div class="col-12 col-md-6 position-relative mt-2">
+                <label class="form-label small fw-bold mb-1">ODS de este artículo *</label>
+                <input type="text" id="zona-add-ods" class="form-control form-control-sm input-theme fw-bold" placeholder="Escribe o selecciona # de ODS..." autocomplete="off" oninput="mostrarSugerenciasODSInput('zona-add-ods', 'zona-suggest-ods', 'zona-add-fecha')" onfocus="mostrarSugerenciasODSInput('zona-add-ods', 'zona-suggest-ods', 'zona-add-fecha')">
+                <div id="zona-suggest-ods" class="suggest-box d-none"></div>
+              </div>
+              <div class="col-12 col-md-6 mt-2">
+                <label class="form-label small fw-bold mb-1">Fecha de la ODS (Automática)</label>
+                <input type="text" id="zona-add-fecha" class="form-control form-control-sm input-theme" readonly placeholder="Se llena al elegir la ODS">
               </div>
             </div>
           </div>
 
-          <!-- Lista de artículos por guardar en esta tanda -->
-          <h6 class="small fw-bold text-muted text-uppercase mb-2">Artículos listos para ingresar a la zona (<span id="conteo-cola-zona">0</span>)</h6>
+          <h6 class="fw-bold small text-muted text-uppercase mb-2">Artículos por ingresar (<span id="conteo-cola-zona">0</span>)</h6>
           <div id="contenedor-cola-zona" class="d-flex flex-column gap-2"></div>
         </div>
         <div class="modal-footer border-top border-theme">
-          <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
           <button type="button" class="btn btn-success rounded-pill px-4 fw-bold" id="btn-confirmar-ingreso-zona" onclick="confirmarIngresoManualZona()">
-            <i class="bi bi-check2-all me-1"></i>Guardar Todo en Zona
+            <i class="bi bi-check2-all me-1"></i>Confirmar Ingreso a Zona
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL 3: NUEVO MOVIMIENTO / VIAJE (EXCLUSIVO ADMIN) -->
+  <!-- MODAL 3A: CREAR CABECERA DE VIAJE EN ANDÉN (PASO A DEL ERP) -->
   <div class="modal fade" id="modalNuevoViaje" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content bg-card rounded-4 border-0 shadow-lg">
         <div class="modal-header border-bottom border-theme">
-          <h5 class="modal-title fw-bold"><i class="bi bi-truck text-primary me-2"></i>Nuevo Movimiento / Viaje</h5>
+          <h5 class="modal-title fw-bold">
+            <i class="bi bi-truck text-primary me-2"></i>Nuevo Viaje en Andén
+          </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <!-- 1. INFORMACIÓN DEL VIAJE -->
-          <h6 class="small fw-bold text-uppercase text-muted mb-2">1. Información del Viaje</h6>
-          <div class="pill-switch-group mb-3">
-            <button type="button" class="pill-switch-btn active" id="pill-viaje-traslado" onclick="cambiarTipoViajeModal('TRASLADO_BODEGA')">
-              <i class="bi bi-arrow-left-right me-1"></i>Traslado de Bodega
+          <!-- Switch Tipo de Despacho idéntico al ERP -->
+          <label class="form-label small fw-bold text-muted text-uppercase mb-1">Tipo de Despacho</label>
+          <div class="d-flex gap-2 mb-3 p-1 rounded-pill border border-theme" style="background-color: var(--input-bg);">
+            <button type="button" class="btn btn-sm rounded-pill flex-fill fw-bold btn-primary" id="pill-viaje-traslado" onclick="cambiarTipoViajeModal('TRASLADO_BODEGA')">
+              <i class="bi bi-building me-1"></i>Traspaso Bodega
             </button>
-            <button type="button" class="pill-switch-btn" id="pill-viaje-evento" onclick="cambiarTipoViajeModal('ENVIO_EVENTO')">
-              <i class="bi bi-building-check me-1"></i>Envío a Evento
+            <button type="button" class="btn btn-sm rounded-pill flex-fill fw-bold" id="pill-viaje-evento" onclick="cambiarTipoViajeModal('ENVIO_EVENTO')">
+              <i class="bi bi-geo-alt-fill me-1"></i>A Evento / Hotel
             </button>
-          </div>
-
-          <!-- Bloque ODS General (Solo visible cuando es ENVÍO A EVENTO) -->
-          <div id="bloque-ods-general-viaje" class="p-3 rounded-4 border border-primary bg-primary bg-opacity-10 mb-3 d-none">
-            <div class="row g-2 align-items-center">
-              <div class="col-12 col-md-5 position-relative">
-                <label class="form-label small fw-bold mb-1">ODS DEL EVENTO (GENERAL) *</label>
-                <input type="text" id="viaje-ods-general" class="form-control form-control-sm input-theme fw-bold" placeholder="Busca o escribe # de ODS..." autocomplete="off" oninput="seleccionarODSGeneralViaje(this.value)">
-                <div id="viaje-suggest-ods-general" class="suggest-box d-none"></div>
-              </div>
-              <div class="col-6 col-md-4">
-                <label class="form-label small fw-bold mb-1">FECHA DE MONTAJE (AUTO)</label>
-                <input type="text" id="viaje-fecha-ods-general" class="form-control form-control-sm input-theme" readonly>
-              </div>
-              <div class="col-6 col-md-3">
-                <label class="form-label small fw-bold mb-1">EVENTO</label>
-                <input type="text" id="viaje-evento-general" class="form-control form-control-sm input-theme" readonly>
-              </div>
-            </div>
           </div>
 
           <div class="row g-2 mb-3">
-            <div class="col-6 col-md-3">
-              <label class="form-label small fw-bold mb-1">BODEGA ORIGEN *</label>
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-bold mb-1">Bodega Origen *</label>
               <select id="viaje-select-origen" class="form-select form-select-sm input-theme fw-bold" onchange="validarOrigenDestinoViaje()">
                 <option value="BONFIL">BONFIL</option>
                 <option value="CEDIS">CEDIS</option>
                 <option value="PUERTO">PUERTO</option>
               </select>
             </div>
-            <div class="col-6 col-md-3">
-              <label class="form-label small fw-bold mb-1" id="lbl-viaje-destino">BODEGA DESTINO *</label>
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-bold mb-1" id="lbl-viaje-destino">Bodega Destino *</label>
               <select id="viaje-select-destino" class="form-select form-select-sm input-theme fw-bold"></select>
             </div>
-            <div class="col-6 col-md-3">
-              <label class="form-label small fw-bold mb-1">VEHÍCULO *</label>
+
+            <!-- Solo en Envío a Evento: ODS General que autocompleta Hotel y Fecha -->
+            <div class="col-12 d-none position-relative mt-2" id="bloque-ods-general-viaje">
+              <label class="form-label small fw-bold mb-1 text-primary">ODS del Evento (Opcional si lleva varias ODS)</label>
+              <input type="text" id="viaje-ods-general" class="form-control form-control-sm input-theme fw-bold" placeholder="Escribe # de ODS para autocompletar Hotel..." autocomplete="off" oninput="seleccionarODSGeneralViaje(this.value)" onfocus="seleccionarODSGeneralViaje(this.value)">
+              <div id="viaje-suggest-ods-general" class="suggest-box d-none"></div>
+              <input type="hidden" id="viaje-fecha-ods-general">
+              <input type="hidden" id="viaje-evento-general">
+            </div>
+
+            <div class="col-12 col-md-6 mt-2">
+              <label class="form-label small fw-bold mb-1">Unidad / Vehículo *</label>
               <select id="viaje-select-vehiculo" class="form-select form-select-sm input-theme"></select>
             </div>
-            <div class="col-6 col-md-3">
-              <label class="form-label small fw-bold mb-1">CHOFER *</label>
+            <div class="col-12 col-md-6 mt-2">
+              <label class="form-label small fw-bold mb-1">Chofer Asignado *</label>
               <select id="viaje-select-chofer" class="form-select form-select-sm input-theme"></select>
             </div>
           </div>
 
-          <!-- 2. INFORMACIÓN DE LA CARGA -->
-          <h6 class="small fw-bold text-uppercase text-muted mb-2">2. Información de la Carga (Artículos)</h6>
-          <div class="p-3 rounded-4 border border-theme mb-3" style="background-color: var(--input-bg);">
-            <div class="row g-2 align-items-end">
-              <div class="col-4 col-md-3 position-relative">
-                <label class="form-label small fw-bold mb-1">CÓDIGO *</label>
-                <input type="text" id="viaje-add-codigo" class="form-control form-control-sm input-theme fw-bold" placeholder="Código..." autocomplete="off" oninput="buscarArtBidireccional('viaje', 'codigo', this.value)">
-                <div id="viaje-suggest-codigo" class="suggest-box d-none"></div>
-              </div>
-              <div class="col-8 col-md-5 position-relative">
-                <label class="form-label small fw-bold mb-1">NOMBRE DEL ARTÍCULO *</label>
-                <input type="text" id="viaje-add-nombre" class="form-control form-control-sm input-theme fw-bold" placeholder="Buscar por nombre..." autocomplete="off" oninput="buscarArtBidireccional('viaje', 'nombre', this.value)">
-                <div id="viaje-suggest-nombre" class="suggest-box d-none"></div>
-              </div>
-              <div class="col-5 col-md-4">
-                <label class="form-label small fw-bold mb-1">CANTIDAD *</label>
-                <div class="input-group input-group-sm">
-                  <button class="btn btn-outline-secondary fw-bold px-3" type="button" onclick="ajustarInputCant('viaje-add-cant', -1)">-</button>
-                  <input type="number" id="viaje-add-cant" class="form-control text-center fw-bold input-theme" value="1" min="1">
-                  <button class="btn btn-outline-secondary fw-bold px-3" type="button" onclick="ajustarInputCant('viaje-add-cant', 1)">+</button>
-                </div>
-              </div>
-
-              <!-- ODS por artículo (Solo cuando es TRASLADO DE BODEGA) -->
-              <div class="col-7 col-md-5 position-relative" id="col-viaje-add-ods-item">
-                <label class="form-label small fw-bold mb-1">ODS *</label>
-                <input type="text" id="viaje-add-ods" class="form-control form-control-sm input-theme fw-bold" placeholder="Escribe # de ODS..." autocomplete="off" oninput="mostrarSugerenciasODSInput('viaje-add-ods', 'viaje-suggest-ods', 'viaje-add-fecha')">
-                <div id="viaje-suggest-ods" class="suggest-box d-none"></div>
-              </div>
-              <div class="col-8 col-md-5" id="col-viaje-add-fecha-item">
-                <label class="form-label small fw-bold mb-1">FECHA MONTAJE (AUTO)</label>
-                <input type="text" id="viaje-add-fecha" class="form-control form-control-sm input-theme" readonly placeholder="Automática">
-              </div>
-
-              <div class="col-12 col-md-2 ms-auto">
-                <button type="button" class="btn btn-sm btn-primary w-100 fw-bold py-2 rounded-3" onclick="anadirArticuloACargaViaje()">
-                  <i class="bi bi-plus-circle me-1"></i>Subir
-                </button>
-              </div>
-            </div>
+          <div class="alert alert-info border-0 rounded-4 py-2 px-3 small mb-0">
+            <i class="bi bi-info-circle-fill me-1"></i>
+            Al crear el viaje aparecerá en <b>Andén (Cargando)</b> para que tú y las demás áreas le vayan subiendo artículos antes de darle <b>Salida a Ruta</b>.
           </div>
-
-          <div id="contenedor-carga-viaje" class="d-flex flex-column gap-2"></div>
         </div>
         <div class="modal-footer border-top border-theme">
-          <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
           <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" id="btn-guardar-viaje" onclick="confirmarCrearViaje()">
-            <i class="bi bi-send-check-fill me-1"></i>Registrar Movimiento
+            <i class="bi bi-plus-circle me-1"></i>Crear Viaje en Andén
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL 4: COMPLETAR / CERRAR VIAJE (VERIFICAR CANTIDADES Y NOVEDADES) -->
+  <!-- MODAL 3B: GESTIÓN DE CARGA COLABORATIVA EN ANDÉN Y DESPACHO A RUTA -->
+  <div class="modal fade" id="modalGestionCargaViaje" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content bg-card rounded-4 border-0 shadow-lg">
+        <div class="modal-header border-bottom border-theme">
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <h5 class="modal-title fw-bold mb-0" id="carga-viaje-titulo">VJ-0001</h5>
+              <span class="badge bg-warning text-dark rounded-pill" id="carga-viaje-badge">En Andén</span>
+            </div>
+            <small class="text-muted fw-bold" id="carga-viaje-subtitulo"></small>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <!-- SECCIÓN 1: SUBIR DESDE ZONA DE ALISTAMIENTO O AGREGAR MANUALMENTE -->
+          <div id="panel-subir-cosas-anden" class="p-3 rounded-4 border border-theme mb-3" style="background-color: var(--input-bg);">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+              <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-box-arrow-in-up me-1"></i>1. Subir Artículos desde Zona de Alistamiento (<span id="lbl-bodega-carga-origen">BONFIL</span>)
+              </h6>
+              <span class="small text-muted">Toca <b>Subir al Camión</b> en los artículos ya alistados o agrégalos abajo:</span>
+            </div>
+
+            <!-- Lista rápida de lo que está en Zona de Alistamiento de la bodega origen -->
+            <div id="contenedor-disponible-alistamiento-viaje" class="d-flex flex-column gap-2 mb-3" style="max-height: 210px; overflow-y: auto;"></div>
+
+            <!-- Formulario rápido para subir otro artículo directamente con su ODS -->
+            <div class="border-top border-theme pt-2 mt-2">
+              <small class="fw-bold text-muted d-block mb-2">¿Subir artículo adicional por Código / Nombre?</small>
+              <div class="row g-2 align-items-end">
+                <div class="col-6 col-md-2 position-relative">
+                  <label class="form-label small fw-bold mb-1">Zona Origen</label>
+                  <select id="viaje-add-zona-origen" class="form-select form-select-sm input-theme fw-bold"></select>
+                </div>
+                <div class="col-6 col-md-2 position-relative">
+                  <label class="form-label small fw-bold mb-1">Código *</label>
+                  <input type="text" id="viaje-add-codigo" class="form-control form-control-sm input-theme fw-bold text-uppercase" placeholder="Código..." autocomplete="off" oninput="buscarArtBidireccional('viaje', 'codigo', this.value)">
+                  <div id="viaje-suggest-codigo" class="suggest-box d-none"></div>
+                </div>
+                <div class="col-12 col-md-3 position-relative">
+                  <label class="form-label small fw-bold mb-1">Artículo *</label>
+                  <input type="text" id="viaje-add-nombre" class="form-control form-control-sm input-theme" placeholder="Nombre..." autocomplete="off" oninput="buscarArtBidireccional('viaje', 'nombre', this.value)">
+                  <div id="viaje-suggest-nombre" class="suggest-box d-none"></div>
+                </div>
+                <div class="col-6 col-md-2 position-relative">
+                  <label class="form-label small fw-bold mb-1">ODS *</label>
+                  <input type="text" id="viaje-add-ods" class="form-control form-control-sm input-theme fw-bold" placeholder="# ODS..." autocomplete="off" oninput="mostrarSugerenciasODSInput('viaje-add-ods', 'viaje-suggest-ods-item', 'viaje-add-fecha')" onfocus="mostrarSugerenciasODSInput('viaje-add-ods', 'viaje-suggest-ods-item', 'viaje-add-fecha')">
+                  <div id="viaje-suggest-ods-item" class="suggest-box d-none"></div>
+                  <input type="hidden" id="viaje-add-fecha">
+                </div>
+                <div class="col-3 col-md-1">
+                  <label class="form-label small fw-bold mb-1">Cant.</label>
+                  <input type="number" id="viaje-add-cant" class="form-control form-control-sm text-center fw-bold input-theme" value="1" min="1">
+                </div>
+                <div class="col-3 col-md-2">
+                  <button type="button" class="btn btn-sm btn-primary w-100 rounded-pill fw-bold py-1" onclick="subirArticuloDirectoAViaje()">
+                    <i class="bi bi-upload me-1"></i>Subir
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECCIÓN 2: MANIFIESTO ARRIBA DEL CAMIÓN -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-bold mb-0">
+              <i class="bi bi-truck text-primary me-1"></i>2. Manifiesto Arriba del Camión
+            </h6>
+            <span class="badge bg-primary rounded-pill px-3 py-1" id="badge-total-arriba-camion">0 pzas</span>
+          </div>
+          <div id="contenedor-manifiesto-arriba-camion" class="d-flex flex-column gap-2"></div>
+        </div>
+
+        <div class="modal-footer border-top border-theme d-flex justify-content-between flex-wrap gap-2">
+          <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" id="btn-dar-salida-viaje" onclick="confirmarDarSalidaViajeActual()">
+              <i class="bi bi-send-check-fill me-1"></i>Dar Salida al Viaje (Mandar a Ruta)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: DAR ENTRADA / RECIBIR VIAJE EN BODEGA DESTINO O REGRESO DE EVENTO -->
   <div class="modal fade" id="modalCompletarViaje" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content bg-card rounded-4 border-0 shadow-lg">
         <div class="modal-header border-bottom border-theme">
           <div>
-            <h5 class="modal-title fw-bold mb-0" id="titulo-modal-completar-viaje"><i class="bi bi-check2-square text-success me-2"></i>Completar Viaje</h5>
+            <h5 class="modal-title fw-bold mb-0" id="titulo-modal-completar-viaje">Dar Entrada / Recibir Viaje</h5>
             <small class="text-muted" id="subtitulo-modal-completar-viaje"></small>
           </div>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <div class="alert alert-info py-2 px-3 small rounded-3 mb-3">
-            <i class="bi bi-info-circle-fill me-1"></i>
-            Verifica las cantidades que llegaron/regresaron. Si todo está completo déjalo igual; si faltó algo o hubo daño, ajusta la cantidad recibida y anota la novedad.
-          </div>
+          <p class="small text-muted mb-3">
+            Verifica las cantidades que llegaron físicamente. Si faltó alguna pieza o regresó con daño, ajusta la cantidad recibida y escribe la novedad:
+          </p>
           <div id="contenedor-items-completar-viaje" class="d-flex flex-column gap-2 mb-3"></div>
           <div>
-            <label class="form-label small fw-bold">OBSERVACIÓN GENERAL DEL CIERRE (OPCIONAL)</label>
-            <input type="text" id="input-obs-cierre-viaje" class="form-control input-theme" placeholder="Ej: Todo recibido conforme / Revisado en piso...">
+            <label class="form-label small fw-bold">Observaciones generales de recepción (Opcional)</label>
+            <input type="text" id="input-obs-cierre-viaje" class="form-control form-control-sm input-theme" placeholder="Ej: Recibido conforme en bodega / Evento desmontado completo...">
           </div>
         </div>
         <div class="modal-footer border-top border-theme">
-          <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Volver</button>
           <button type="button" class="btn btn-success rounded-pill px-4 fw-bold" id="btn-confirmar-completar-viaje" onclick="guardarCompletarViaje()">
-            <i class="bi bi-check-circle-fill me-1"></i>Confirmar y Completar Viaje
+            <i class="bi bi-box-arrow-in-down me-1"></i>Confirmar Entrada y Actualizar Zona
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL 5: CONFIGURACIÓN DE URL DEL PUENTE GOOGLE APPS SCRIPT -->
+  <!-- MODAL 5: RECUPERAR PIN POR CORREO (IDÉNTICO A LOGIN.HTML DEL ERP) -->
+  <div class="modal fade" id="modalRecuperarPin" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-card rounded-4 border-0 shadow-lg">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title w-100 text-center fw-bold">Recuperar Acceso</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div id="rec-step-email">
+            <p class="text-muted small text-center mb-3">Introduce tu <b>Email de Operaciones</b> para recibir un código de 6 dígitos.</p>
+            <input type="email" id="rec-input-email" class="form-control input-theme mb-3" placeholder="usuario@zunigadeco.com">
+            <button type="button" class="btn-login-erp" onclick="enviarCodigoRecuperacionPin()">Enviar Código</button>
+          </div>
+          <div id="rec-step-codigo" class="d-none">
+            <p class="text-muted small text-center mb-3">Ingresa el código de 6 dígitos enviado a tu correo y tu nuevo PIN de 4 números:</p>
+            <input type="text" id="rec-input-codigo" class="form-control text-center fw-bold fs-4 mb-3 input-theme" maxlength="6" placeholder="000000">
+            <input type="password" id="rec-input-nuevopin" class="form-control text-center fw-bold fs-4 mb-3 input-theme" maxlength="4" placeholder="Nuevo PIN (4 dígitos)">
+            <button type="button" class="btn-login-erp" onclick="confirmarNuevoPinRecuperado()">Guardar Nuevo PIN</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 6: CAMPANITA DE NOVEDADES (FALTANTES Y DAÑOS) -->
+  <div class="modal fade" id="modalNovedades" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content bg-card rounded-4 border-0 shadow-lg">
+        <div class="modal-header border-bottom border-theme">
+          <h5 class="modal-title fw-bold">
+            <i class="bi bi-bell-fill text-warning me-2"></i>Novedades, Faltantes y Daños Reportados
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="contenedor-lista-novedades" class="d-flex flex-column gap-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 7: CONFIGURACIÓN DE URL DEL PUENTE GOOGLE APPS SCRIPT -->
   <div class="modal fade" id="modalConfigApi" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content bg-card rounded-4 border-0 shadow-lg">
@@ -924,26 +1334,22 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
   <script>
     // =========================================================================
     // CONFIGURACIÓN Y ESTADO GLOBAL DE LA APLICACIÓN
     // =========================================================================
-    const PIN_ADMIN = "227000";
-    const PIN_PERSONAL = "779484";
-
     const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbwCIjRxi_e2aBzhezotDx-YcvGcLCoqKEvqLhW3wcHa5B1yggM53-0wv5Tn5Ctb2KOm/exec";
 
     const STATE = {
-      rol: null, // 'ADMIN' | 'OPERATIVO'
-      pinBuffer: "",
+      usuario: null,
+      bodegaGlobal: "BONFIL",
       moduloActivo: "menu",
-      verHistorialViajes: false,
+      filtroEstadoViajes: "EN_CARGA", // 'EN_CARGA' | 'EN_RUTA' | 'HISTORIAL'
       modoConsulta: "ODS",
       tipoViajeModal: "TRASLADO_BODEGA",
+      idViajeEnGestion: null,
       viajeACompletar: null,
       colaZonaManual: [],
-      cargaViajeActual: [],
       catalogos: {
         articulos: [],
         locaciones: [],
@@ -957,7 +1363,6 @@
       historial: []
     };
 
-    // Iconos SVG para el lienzo térmico Niimbot B1 (50x30 mm)
     const ICO_MUEBLE = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><path d='M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3a4 4 0 0 0-4 4v5a1 1 0 0 0 1 1h1v2a1 1 0 0 0 2 0v-2h16v2a1 1 0 0 0 2 0v-2h1a1 1 0 0 0 1-1v-5a4 4 0 0 0-4-4zm-14-3h12v3h-1.1a3 3 0 0 0-5.8 0H8.9a3 3 0 0 0-5.8 0H6V6zm16 11H2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4z'/></svg>";
     const ICO_MAPA = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><path d='M12 1C7.6 1 4 4.6 4 9c0 5.8 8 14 8 14s8-8.2 8-14c0-4.4-3.6-8-8-8zm0 11.5c-1.9 0-3.5-1.6-3.5-3.5S10.1 5.5 12 5.5s3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z'/></svg>";
     const ICO_CAL = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><path d='M19 3h-1V1h-3v2H9V1H6v2H5c-1.1 0-2 .9-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5c0-1.1-.9-2-2-2zm0 18H5V8h14v13zM7 10h4v4H7v-4zm6 0h4v4h-4v-4z'/></svg>";
@@ -967,147 +1372,239 @@
     }
 
     // =========================================================================
-    // ARRANQUE Y GESTIÓN DE PIN DE SEGURIDAD
+    // ARRANQUE Y GESTIÓN DE SESIÓN DE USUARIO (TABLA EMPLEADO DEL ERP)
     // =========================================================================
     document.addEventListener("DOMContentLoaded", function() {
       const temaGuardado = localStorage.getItem("eys_z_theme") || "light";
       document.documentElement.setAttribute("data-theme", temaGuardado);
       actualizarIconoTema(temaGuardado);
 
-      // Cerrar listas de sugerencias al hacer clic fuera
+      const bodGuardada = localStorage.getItem("eys_z_bodega_global") || "BONFIL";
+      STATE.bodegaGlobal = bodGuardada;
+      document.getElementById("lbl-bodega-global").textContent = bodGuardada;
+
       document.addEventListener("click", function(e) {
         if (!e.target.closest(".position-relative")) {
           document.querySelectorAll(".suggest-box").forEach(el => el.classList.add("d-none"));
         }
       });
 
-      // Soporte de teclado numérico físico en pantalla PIN
-      document.addEventListener("keydown", function(e) {
-        const pinScreen = document.getElementById("pin-screen");
-        if (pinScreen && !pinScreen.classList.contains("d-none")) {
-          if (e.key >= "0" && e.key <= "9") presionarDigitoPin(e.key);
-          else if (e.key === "Backspace") borrarUltimoPin();
-          else if (e.key === "Escape") limpiarPin();
-        }
-      });
-
       cargarCacheLocal();
-      verificarSesionPin();
+      verificarSesionUsuario();
       sincronizarDatosServidor(false);
     });
 
-    function verificarSesionPin() {
-      const pinGuardado = localStorage.getItem("eys_z_pin_saved") || "";
-      if (pinGuardado === PIN_ADMIN) {
-        activarSesion("ADMIN");
-      } else if (pinGuardado === PIN_PERSONAL) {
-        activarSesion("OPERATIVO");
-      } else {
-        document.getElementById("pin-screen").classList.remove("d-none");
-      }
-    }
-
-    function presionarDigitoPin(digito) {
-      if (STATE.pinBuffer.length >= 6) return;
-      STATE.pinBuffer += String(digito);
-      document.getElementById("pin-error-msg").textContent = "";
-      actualizarPuntosPin();
-
-      if (STATE.pinBuffer.length === 6) {
-        if (STATE.pinBuffer === PIN_ADMIN) {
-          localStorage.setItem("eys_z_pin_saved", PIN_ADMIN);
-          STATE.pinBuffer = "";
-          actualizarPuntosPin();
-          activarSesion("ADMIN");
-        } else if (STATE.pinBuffer === PIN_PERSONAL) {
-          localStorage.setItem("eys_z_pin_saved", PIN_PERSONAL);
-          STATE.pinBuffer = "";
-          actualizarPuntosPin();
-          activarSesion("OPERATIVO");
-        } else {
-          document.getElementById("pin-error-msg").textContent = "PIN incorrecto. Intenta nuevamente.";
-          setTimeout(limpiarPin, 450);
+    function verificarSesionUsuario() {
+      try {
+        const rawUser = localStorage.getItem("eys_z_user_session");
+        if (rawUser) {
+          const u = JSON.parse(rawUser);
+          if (u && u.email) {
+            aplicarUsuarioEnPantalla(u);
+            return;
+          }
         }
-      }
+      } catch (e) {}
+      document.getElementById("login-screen").classList.remove("d-none");
     }
 
-    function borrarUltimoPin() {
-      STATE.pinBuffer = STATE.pinBuffer.slice(0, -1);
-      actualizarPuntosPin();
-    }
-
-    function limpiarPin() {
-      STATE.pinBuffer = "";
-      actualizarPuntosPin();
-    }
-
-    function actualizarPuntosPin() {
-      const dots = document.querySelectorAll("#pin-dots .pin-dot");
-      dots.forEach((d, idx) => {
-        d.classList.toggle("filled", idx < STATE.pinBuffer.length);
-      });
-    }
-
-    function activarSesion(rol) {
-      STATE.rol = rol;
-      document.getElementById("pin-screen").classList.add("d-none");
-      const cardMov = document.getElementById("card-menu-movimientos");
-      const badgeRol = document.getElementById("badge-rol-activo");
-
-      if (rol === "ADMIN") {
-        cardMov.classList.remove("d-none");
-        badgeRol.textContent = "ADMIN";
-        badgeRol.className = "badge rounded-pill bg-warning text-dark fw-bold";
-      } else {
-        cardMov.classList.add("d-none");
-        badgeRol.textContent = "OPERATIVO";
-        badgeRol.className = "badge rounded-pill bg-info text-dark fw-bold";
-        if (STATE.moduloActivo === "movimientos") navegarModulo("menu");
+    function aplicarUsuarioEnPantalla(u) {
+      STATE.usuario = u;
+      document.getElementById("login-screen").classList.add("d-none");
+      document.getElementById("nav-user-nombre").textContent = u.nombre || u.email;
+      document.getElementById("nav-user-rol").textContent = (u.rol || u.departamento || "OPERACIÓN").toUpperCase();
+      if (u.foto) {
+        document.getElementById("nav-user-foto").src = u.foto;
       }
       actualizarContadoresMenu();
     }
 
-    function cerrarSesionPin() {
-      localStorage.removeItem("eys_z_pin_saved");
-      STATE.rol = null;
-      STATE.pinBuffer = "";
-      actualizarPuntosPin();
-      document.getElementById("pin-screen").classList.remove("d-none");
+    function alternarVerPinLogin() {
+      const inp = document.getElementById("login-pin");
+      const ico = document.getElementById("icono-ojo-pin");
+      if (inp.type === "password") {
+        inp.type = "text";
+        ico.className = "bi bi-eye-slash-fill";
+      } else {
+        inp.type = "password";
+        ico.className = "bi bi-eye-fill";
+      }
+    }
+
+    async function iniciarSesionERP(e) {
+      e.preventDefault();
+      const inpEmail = document.getElementById("login-email");
+      const inpPin = document.getElementById("login-pin");
+      const email = inpEmail.value.trim().toLowerCase();
+      const pin = inpPin.value.trim();
+      const errBox = document.getElementById("login-error-msg");
+      const btn = document.getElementById("btn-submit-login");
+
+      errBox.textContent = "";
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Validando...';
+
+      try {
+        const res = await llamarApiPost({
+          action: "loginUsuario",
+          email: email,
+          pin: pin
+        });
+
+        if (res && res.exito && res.user) {
+          localStorage.setItem("eys_z_user_session", JSON.stringify(res.user));
+          aplicarUsuarioEnPantalla(res.user);
+        } else {
+          const msgSrv = (res && (res.message || res.error)) || "Credenciales inválidas.";
+          if (msgSrv.indexOf("loginUsuario") !== -1) {
+            errBox.textContent = "El servidor en la nube aún no tiene la última versión de loginUsuario. Autoriza el despliegue (clasp push / deploy) para activarlo.";
+          } else {
+            errBox.textContent = msgSrv;
+          }
+          inpEmail.disabled = false;
+          inpEmail.readOnly = false;
+          inpPin.disabled = false;
+          inpPin.readOnly = false;
+          setTimeout(() => inpPin.focus(), 50);
+        }
+      } catch (err) {
+        errBox.textContent = "Error al conectar con el servidor: " + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i> INICIAR SESIÓN';
+      }
+    }
+
+    async function confirmarCerrarSesion() {
+      const conf = await Swal.fire({
+        title: "¿Cerrar sesión?",
+        text: "Saldrás de tu cuenta actual.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Sí, salir",
+        cancelButtonText: "Cancelar"
+      });
+      if (!conf.isConfirmed) return;
+      localStorage.removeItem("eys_z_user_session");
+      STATE.usuario = null;
+      document.getElementById("login-pin").value = "";
+      document.getElementById("login-screen").classList.remove("d-none");
+    }
+
+    function abrirModalRecuperarPin() {
+      document.getElementById("rec-step-email").classList.remove("d-none");
+      document.getElementById("rec-step-codigo").classList.add("d-none");
+      document.getElementById("rec-input-email").value = document.getElementById("login-email").value || "";
+      new bootstrap.Modal(document.getElementById("modalRecuperarPin")).show();
+    }
+
+    async function enviarCodigoRecuperacionPin() {
+      const email = document.getElementById("rec-input-email").value.trim();
+      if (!email) return Swal.fire("Atención", "Ingresa tu correo electrónico.", "warning");
+      const res = await llamarApiPost({ action: "solicitarCodigoPin", email: email });
+      if (res && res.exito) {
+        document.getElementById("rec-step-email").classList.add("d-none");
+        document.getElementById("rec-step-codigo").classList.remove("d-none");
+        Swal.fire("Código enviado", "Revisa tu correo e ingresa el código de 6 dígitos.", "success");
+      } else {
+        Swal.fire("Error", (res && res.message) || "No se pudo enviar el código.", "error");
+      }
+    }
+
+    async function confirmarNuevoPinRecuperado() {
+      const email = document.getElementById("rec-input-email").value.trim();
+      const codigo = document.getElementById("rec-input-codigo").value.trim();
+      const nuevoPin = document.getElementById("rec-input-nuevopin").value.trim();
+      if (!codigo || nuevoPin.length !== 4) {
+        return Swal.fire("Atención", "Ingresa el código de 6 dígitos y un nuevo PIN de 4 números.", "warning");
+      }
+      const ver = await llamarApiPost({ action: "verificarCodigoPin", email: email, codigo: codigo });
+      if (!ver || !ver.exito) {
+        return Swal.fire("Código inválido", (ver && ver.message) || "Verifica el código.", "error");
+      }
+      const act = await llamarApiPost({ action: "actualizarPin", email: email, nuevoPin: nuevoPin });
+      if (act && act.exito && act.user) {
+        bootstrap.Modal.getInstance(document.getElementById("modalRecuperarPin")).hide();
+        localStorage.setItem("eys_z_user_session", JSON.stringify(act.user));
+        aplicarUsuarioEnPantalla(act.user);
+        Swal.fire("¡PIN actualizado!", "Tu nuevo PIN ha quedado guardado.", "success");
+      } else {
+        Swal.fire("Error", (act && act.message) || "No se pudo actualizar el PIN.", "error");
+      }
     }
 
     // =========================================================================
-    // NAVEGACIÓN ENTRE MÓDULOS Y TEMA
+    // NAVEGACIÓN ENTRE LAS 4 FASES DEL ERP Y SUB-MÓDULOS
     // =========================================================================
     function navegarModulo(mod) {
-      if (mod === "movimientos" && STATE.rol !== "ADMIN") {
-        Swal.fire("Acceso restringido", "Este módulo solo está habilitado para el Administrador.", "warning");
-        return;
-      }
       STATE.moduloActivo = mod;
-      const vistas = ["menu", "movimientos", "ods", "zonas", "etiquetas", "consultar"];
+      const vistas = ["menu", "ods", "zonas", "movimientos", "etiquetas", "consultar"];
       vistas.forEach(v => {
         const el = document.getElementById("vista-" + v);
         if (el) el.classList.toggle("d-none", v !== mod);
       });
 
-      const btnVolver = document.getElementById("btn-volver-menu");
-      btnVolver.classList.toggle("d-none", mod === "menu");
+      document.getElementById("btn-volver-menu").classList.toggle("d-none", mod === "menu");
 
       const titulos = {
-        menu: "Control Entradas y Salidas",
-        movimientos: "Movimientos y Viajes",
-        ods: "Gestión de ODS",
-        zonas: "Zonas de Alistamiento",
-        etiquetas: "Etiquetas Niimbot B1",
-        consultar: "Consultar Movimiento"
+        menu: "Entradas y Salidas",
+        ods: "1. Planeación",
+        zonas: "2. Alistamiento",
+        movimientos: "3. Traslados",
+        etiquetas: "2. Alistamiento / Etiquetas",
+        consultar: "3. Traslados / Consultar Movimiento"
       };
-      document.getElementById("topbar-titulo").textContent = titulos[mod] || "Control Entradas y Salidas";
+      document.getElementById("breadcrumb-submodulo").textContent = titulos[mod] || "Entradas y Salidas";
+      document.getElementById("subbar-titulo-fase").textContent = mod === "menu" ? "" : ("· " + titulos[mod]);
 
-      if (mod === "movimientos") renderizarListaViajes();
       if (mod === "ods") renderizarListaODS();
       if (mod === "zonas") renderizarZonaActiva();
+      if (mod === "movimientos") renderizarListaViajes();
       if (mod === "etiquetas") dibujarLienzoVacioEtiqueta();
       if (mod === "consultar") ejecutarConsultaMovimientos();
+    }
+
+    function mostrarAvisoStockERP() {
+      Swal.fire({
+        icon: "info",
+        title: "Función disponible en el ERP",
+        confirmButtonText: "Entendido",
+        confirmButtonColor: "#00a9e0"
+      });
+    }
+
+    function cambiarBodegaGlobal(bodega) {
+      STATE.bodegaGlobal = bodega;
+      localStorage.setItem("eys_z_bodega_global", bodega);
+      document.getElementById("lbl-bodega-global").textContent = bodega;
+
+      // Sincronizar zona por defecto según bodega elegida
+      const selZona = document.getElementById("select-zona-activa");
+      if (selZona) {
+        if (bodega === "BONFIL" && !selZona.value.startsWith("BONFIL")) selZona.value = "BONFIL MOBILIARIO";
+        else if (bodega === "CEDIS") selZona.value = "CEDIS";
+        else if (bodega === "PUERTO") selZona.value = "PUERTO";
+      }
+      refrescarVistaActual();
+    }
+
+    function abrirModalNovedades() {
+      const cont = document.getElementById("contenedor-lista-novedades");
+      const novs = (STATE.historial || []).filter(h => h.tipo_movimiento === "NOVEDAD_FALTANTE" || h.novedad);
+      if (novs.length === 0) {
+        cont.innerHTML = '<div class="text-center text-muted py-4">No hay faltantes ni reportes de daño registrados.</div>';
+      } else {
+        cont.innerHTML = novs.map(n => `
+          <div class="p-3 rounded-4 border border-danger border-opacity-25 bg-danger bg-opacity-10">
+            <div class="d-flex justify-content-between">
+              <strong class="text-danger">${n.resumen_texto}</strong>
+              <small class="text-muted">${n.fecha_hora}</small>
+            </div>
+            <div class="small text-muted mt-1">Viaje: <b>${n.id_viaje}</b> · Chofer: ${n.chofer || 'N/A'}</div>
+          </div>
+        `).join("");
+      }
+      new bootstrap.Modal(document.getElementById("modalNovedades")).show();
     }
 
     function alternarTema() {
@@ -1120,7 +1617,7 @@
 
     function actualizarIconoTema(tema) {
       const ico = document.getElementById("icono-tema");
-      if (ico) ico.className = tema === "dark" ? "bi bi-sun-fill text-warning" : "bi bi-moon-stars-fill";
+      if (ico) ico.className = tema === "dark" ? "bi bi-sun-fill text-warning fs-6" : "bi bi-moon-fill fs-6";
     }
 
     function abrirModalConfigApi() {
@@ -1147,8 +1644,7 @@
           ods: STATE.ods,
           zonas: STATE.zonas,
           viajes: STATE.viajes,
-          historial: STATE.historial,
-          ts: new Date().toLocaleTimeString()
+          historial: STATE.historial
         }));
       } catch (e) {}
     }
@@ -1195,61 +1691,73 @@
           poblarSelectoresCatalogos();
           actualizarContadoresMenu();
           refrescarVistaActual();
-          document.getElementById("lbl-ultima-sync").textContent = "Actualizado: " + new Date().toLocaleTimeString();
           if (mostrarToast) {
-            Swal.fire({ toast: true, position: "top-end", icon: "success", title: "Datos sincronizados", showConfirmButton: false, timer: 1400 });
+            Swal.fire({ toast: true, position: "top-end", icon: "success", title: "Sincronizado con Google Sheets", showConfirmButton: false, timer: 1300 });
           }
         }
       } catch (err) {
-        console.warn("Modo local / pendiente de conectar URL API:", err);
+        console.warn("Aviso de sincronización:", err);
       } finally {
         if (barra) barra.classList.add("d-none");
       }
     }
 
     function refrescarVistaActual() {
-      if (STATE.moduloActivo === "movimientos") renderizarListaViajes();
-      else if (STATE.moduloActivo === "ods") renderizarListaODS();
+      if (STATE.moduloActivo === "ods") renderizarListaODS();
       else if (STATE.moduloActivo === "zonas") renderizarZonaActiva();
+      else if (STATE.moduloActivo === "movimientos") renderizarListaViajes();
       else if (STATE.moduloActivo === "consultar") ejecutarConsultaMovimientos();
+      if (STATE.idViajeEnGestion) refrescarModalGestionCargaActual();
     }
 
     function actualizarContadoresMenu() {
-      const viajesCurso = (STATE.viajes || []).filter(v => v.estado === "EN_CURSO").length;
+      const enAnden = (STATE.viajes || []).filter(v => v.estado === "EN_CARGA").length;
+      const enRuta = (STATE.viajes || []).filter(v => v.estado === "EN_RUTA" || v.estado === "EN_CURSO").length;
       const odsActivas = (STATE.ods || []).filter(o => o.estado === "ACTIVA").length;
       const totalItemsZonas = (STATE.zonas || []).reduce((acc, z) => acc + (Number(z.cantidad) || 0), 0);
+      const totalNovedades = (STATE.historial || []).filter(h => h.tipo_movimiento === "NOVEDAD_FALTANTE" || h.novedad).length;
 
       const bViajes = document.getElementById("badge-hub-viajes");
       const bOds = document.getElementById("badge-hub-ods");
       const bZonas = document.getElementById("badge-hub-zonas");
-      if (bViajes) bViajes.textContent = viajesCurso + " en curso";
+      const bAnden = document.getElementById("badge-count-anden");
+      const bRuta = document.getElementById("badge-count-enruta");
+      const bNov = document.getElementById("badge-novedades-top");
+
+      if (bViajes) bViajes.textContent = (enAnden + enRuta) + " activos";
       if (bOds) bOds.textContent = odsActivas + " activas";
       if (bZonas) bZonas.textContent = totalItemsZonas + " pzas";
+      if (bAnden) bAnden.textContent = enAnden;
+      if (bRuta) bRuta.textContent = enRuta;
+      if (bNov) {
+        bNov.textContent = totalNovedades;
+        bNov.classList.toggle("d-none", totalNovedades === 0);
+      }
     }
 
     function poblarSelectoresCatalogos() {
       const selVen = document.getElementById("ods-form-vendedor");
       if (selVen) {
         selVen.innerHTML = '<option value="">Selecciona vendedor...</option>' +
-          (STATE.catalogos.vendedores || []).map(v => `<option value="${v.nombre}" data-id="${v.id}">${v.nombre}</option>`).join("");
+          (STATE.catalogos.vendedores || []).map(v => `<option value="${v.nombre}">${v.nombre}</option>`).join("");
       }
 
       const selLoc = document.getElementById("ods-form-locacion");
       if (selLoc) {
         selLoc.innerHTML = '<option value="">Selecciona locación (hotel)...</option>' +
-          (STATE.catalogos.locaciones || []).map(l => `<option value="${l.nombre}" data-id="${l.id}">${l.nombre}</option>`).join("");
+          (STATE.catalogos.locaciones || []).map(l => `<option value="${l.nombre}">${l.nombre}</option>`).join("");
       }
 
       const selVeh = document.getElementById("viaje-select-vehiculo");
       if (selVeh) {
-        selVeh.innerHTML = '<option value="">Selecciona vehículo...</option>' +
+        selVeh.innerHTML = '<option value="">Selecciona unidad...</option>' +
           (STATE.catalogos.vehiculos || []).map(v => `<option value="${v.nombre}">${v.nombre}</option>`).join("");
       }
 
       const selChof = document.getElementById("viaje-select-chofer");
       if (selChof) {
         selChof.innerHTML = '<option value="">Selecciona chofer...</option>' +
-          (STATE.catalogos.choferes || []).map(c => `<option value="${c.nombre}">${c.nombre} (${c.puesto || 'Operativo'})</option>`).join("");
+          (STATE.catalogos.choferes || []).map(c => `<option value="${c.nombre}">${c.nombre}${c.puesto ? ' (' + c.puesto + ')' : ''}</option>`).join("");
       }
     }
 
@@ -1271,7 +1779,6 @@
 
       const arts = STATE.catalogos.articulos || [];
       if (campo === "codigo") {
-        // Si coincide exacto, autocompletar nombre inmediatamente
         const exacto = arts.find(a => String(a.codigo).toLowerCase() === q);
         if (exacto && inpNom) inpNom.value = exacto.nombre;
 
@@ -1330,9 +1837,7 @@
       const q = inpOds.value.trim().toLowerCase();
       const activas = (STATE.ods || []).filter(o => o.estado === "ACTIVA");
       const exacto = (STATE.ods || []).find(o => String(o.id_ods).toLowerCase() === q);
-      if (exacto && inpFecha) {
-        inpFecha.value = exacto.fecha_montaje || "";
-      }
+      if (exacto && inpFecha) inpFecha.value = exacto.fecha_montaje || "";
 
       const lista = activas.filter(o =>
         !q ||
@@ -1376,7 +1881,7 @@
     }
 
     // =========================================================================
-    // MÓDULO 2: GESTIÓN DE ODS
+    // FASE 1: PLANEACIÓN (ODS)
     // =========================================================================
     function renderizarListaODS() {
       const cont = document.getElementById("contenedor-lista-ods");
@@ -1405,7 +1910,6 @@
         return true;
       });
 
-      // Ordenar desde la fecha de montaje más próxima hasta la más lejana
       filtradas.sort((a, b) => String(a.fecha_montaje || "9999").localeCompare(String(b.fecha_montaje || "9999")));
 
       if (filtradas.length === 0) {
@@ -1426,11 +1930,9 @@
         return `
           <div class="bg-card rounded-4 border border-theme p-3 shadow-sm d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div class="d-flex align-items-center gap-3 flex-grow-1">
-              <!-- Botón 1 al inicio: Lápiz Editar -->
-              <button type="button" class="btn btn-sm btn-outline-primary rounded-circle flex-shrink-0" style="width:38px;height:38px;" onclick="abrirModalEditarODS('${o.id_ods}')" title="Modificar información de esta ODS">
+              <button type="button" class="btn btn-sm btn-outline-primary rounded-circle flex-shrink-0" style="width:38px;height:38px;" onclick="abrirModalEditarODS('${o.id_ods}')" title="Editar ODS">
                 <i class="bi bi-pencil-fill"></i>
               </button>
-
               <div class="flex-grow-1">
                 <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
                   <span class="badge bg-primary rounded-pill px-2 py-1">ODS #${o.id_ods}</span>
@@ -1444,14 +1946,12 @@
                 </div>
               </div>
             </div>
-
-            <!-- 2 Botones al final: Completada y Cancelar -->
             <div class="d-flex align-items-center gap-2 ms-auto">
               ${est === "ACTIVA" ? `
-                <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold" onclick="cambiarEstadoODS('${o.id_ods}', 'COMPLETADA')" title="Marcar ODS como completada en su totalidad">
+                <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold" onclick="cambiarEstadoODS('${o.id_ods}', 'COMPLETADA')">
                   <i class="bi bi-check-circle-fill me-1"></i>Completar
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="cambiarEstadoODS('${o.id_ods}', 'CANCELADA')" title="Cancelar esta ODS">
+                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="cambiarEstadoODS('${o.id_ods}', 'CANCELADA')">
                   <i class="bi bi-x-circle-fill me-1"></i>Cancelar
                 </button>
               ` : `
@@ -1510,7 +2010,6 @@
         return;
       }
 
-      const fechaMont = rawFecha.replace("T", " ");
       const btn = document.getElementById("btn-guardar-ods");
       btn.disabled = true;
 
@@ -1524,7 +2023,7 @@
             nombre_evento: nombreEv,
             vendedor_nombre: nomVend,
             locacion_nombre: nomLoc,
-            fecha_montaje: fechaMont
+            fecha_montaje: rawFecha.replace("T", " ")
           }
         });
 
@@ -1570,12 +2069,11 @@
     }
 
     // =========================================================================
-    // MÓDULO 3: ZONAS DE ALISTAMIENTO (Y CONEXIÓN 1-CLIC CON ETIQUETAS)
+    // FASE 2: ALISTAMIENTO (ZONAS + BOTÓN ETIQUETAS)
     // =========================================================================
     function cambiarZonaActiva() {
       const zona = document.getElementById("select-zona-activa").value;
       const btnFab = document.getElementById("btn-fab-zona");
-      // En LOCACIONES es vista visual por hotel/ODS; en las 6 zonas de bodega se permite ingreso manual +
       if (btnFab) btnFab.classList.toggle("d-none", zona === "LOCACIONES");
       renderizarZonaActiva();
     }
@@ -1610,7 +2108,6 @@
         return;
       }
 
-      // Vista especial para LOCACIONES agrupada por Hotel y ODS
       if (zona === "LOCACIONES") {
         const grupos = {};
         items.forEach(it => {
@@ -1646,7 +2143,7 @@
                   </div>
                   <div class="d-flex align-items-center gap-2">
                     <span class="badge bg-success rounded-pill px-3 py-1">${a.cantidad} pzas</span>
-                    <button type="button" class="btn btn-sm btn-warning rounded-pill px-2 py-0 fw-bold" onclick="imprimirEtiquetaDirectaDesdeZona('${a.id_ods}', '${a.codigo_art}', '${(a.nombre_art || '').replace(/'/g, "\\'")}', '${(a.locacion_nombre || '').replace(/'/g, "\\'")}', '${a.fecha_montaje || ''}')" title="Generar etiqueta lista para imprimir">
+                    <button type="button" class="btn btn-sm btn-warning rounded-pill px-2 py-0 fw-bold" onclick="imprimirEtiquetaDirectaDesdeZona('${a.id_ods}', '${a.codigo_art}', '${(a.nombre_art || '').replace(/'/g, "\\'")}', '${(a.locacion_nombre || '').replace(/'/g, "\\'")}', '${a.fecha_montaje || ''}')">
                       <i class="bi bi-qr-code me-1"></i>Etiqueta
                     </button>
                   </div>
@@ -1658,7 +2155,6 @@
         return;
       }
 
-      // Vista para las 6 Zonas de Bodega
       cont.innerHTML = items.map(it => {
         const odsInfo = (STATE.ods || []).find(o => String(o.id_ods) === String(it.id_ods)) || {};
         const locacionFinal = it.locacion_nombre || odsInfo.locacion_nombre || "POR DEFINIR";
@@ -1682,8 +2178,7 @@
               <span class="badge bg-success bg-opacity-10 text-success border border-success px-3 py-2 rounded-pill fs-6 fw-bold">
                 ${it.cantidad} pzas
               </span>
-              <!-- Botón 1-Clic para Etiqueta -->
-              <button type="button" class="btn btn-warning btn-sm rounded-pill px-3 py-2 fw-bold shadow-sm" onclick="imprimirEtiquetaDirectaDesdeZona('${it.id_ods}', '${it.codigo_art}', '${(it.nombre_art || '').replace(/'/g, "\\'")}', '${locacionFinal.replace(/'/g, "\\'")}', '${fechaFinal}')" title="Mandar todos los datos a la etiqueta lista para imprimir">
+              <button type="button" class="btn btn-warning btn-sm rounded-pill px-3 py-2 fw-bold shadow-sm" onclick="imprimirEtiquetaDirectaDesdeZona('${it.id_ods}', '${it.codigo_art}', '${(it.nombre_art || '').replace(/'/g, "\\'")}', '${locacionFinal.replace(/'/g, "\\'")}', '${fechaFinal}')">
                 <i class="bi bi-qr-code me-1"></i>Etiqueta
               </button>
             </div>
@@ -1797,17 +2292,17 @@
     }
 
     // =========================================================================
-    // MÓDULO 1: MOVIMIENTOS Y VIAJES (EXCLUSIVO ADMIN)
+    // FASE 3: TRASLADOS COLABORATIVOS (ANDÉN -> EN RUTA -> HISTORIAL)
     // =========================================================================
-    function toggleHistorialViajes() {
-      STATE.verHistorialViajes = !STATE.verHistorialViajes;
-      const btn = document.getElementById("btn-toggle-historial-viajes");
-      if (btn) {
-        btn.classList.toggle("btn-primary", STATE.verHistorialViajes);
-        btn.classList.toggle("btn-outline-primary", !STATE.verHistorialViajes);
-        btn.innerHTML = STATE.verHistorialViajes
-          ? '<i class="bi bi-truck me-1"></i>Ver En Curso'
-          : '<i class="bi bi-clock-history me-1"></i>Historial';
+    function cambiarFiltroEstadoViajes(nuevoEstado) {
+      STATE.filtroEstadoViajes = nuevoEstado;
+      document.getElementById("pill-filtro-anden").classList.toggle("active", nuevoEstado === "EN_CARGA");
+      document.getElementById("pill-filtro-enruta").classList.toggle("active", nuevoEstado === "EN_RUTA");
+
+      const btnHist = document.getElementById("btn-toggle-historial-viajes");
+      if (btnHist) {
+        btnHist.classList.toggle("btn-primary", nuevoEstado === "HISTORIAL");
+        btnHist.classList.toggle("btn-outline-secondary", nuevoEstado !== "HISTORIAL");
       }
       renderizarListaViajes();
     }
@@ -1818,9 +2313,10 @@
       const q = (document.getElementById("filtro-viajes-texto")?.value || "").trim().toLowerCase();
 
       const filtrados = (STATE.viajes || []).filter(v => {
-        const est = String(v.estado || "EN_CURSO").toUpperCase();
-        if (!STATE.verHistorialViajes && est !== "EN_CURSO") return false;
-        if (STATE.verHistorialViajes && est === "EN_CURSO") return false;
+        const est = String(v.estado || "EN_CARGA").toUpperCase();
+        if (STATE.filtroEstadoViajes === "EN_CARGA" && est !== "EN_CARGA") return false;
+        if (STATE.filtroEstadoViajes === "EN_RUTA" && est !== "EN_RUTA" && est !== "EN_CURSO") return false;
+        if (STATE.filtroEstadoViajes === "HISTORIAL" && est !== "COMPLETADO" && est !== "CANCELADO") return false;
 
         if (!q) return true;
         const matchCab = (
@@ -1839,38 +2335,74 @@
       });
 
       if (filtrados.length === 0) {
+        const msgVacio = STATE.filtroEstadoViajes === "EN_CARGA"
+          ? "No hay camiones en Andén actualmente. Toca el botón <b>+</b> para abrir un nuevo viaje y empezar a subirle carga."
+          : (STATE.filtroEstadoViajes === "EN_RUTA"
+              ? "No hay viajes en ruta en este momento."
+              : "No hay viajes en el historial (Completados / Cancelados).");
         cont.innerHTML = `
           <div class="bg-card rounded-4 border border-theme p-5 text-center text-muted">
-            <i class="bi bi-truck-flatbed fs-1 d-block mb-2 opacity-50"></i>
-            No hay viajes ${STATE.verHistorialViajes ? 'en el historial (Completados / Cancelados)' : 'activos en curso'}.
+            <i class="bi bi-truck fs-1 d-block mb-2 opacity-50"></i>
+            ${msgVacio}
           </div>`;
         return;
       }
 
       cont.innerHTML = filtrados.map(v => {
         const esEvento = v.tipo_viaje === "ENVIO_EVENTO";
+        const est = String(v.estado || "EN_CARGA").toUpperCase();
+        const totalPzas = (v.items || []).reduce((acc, it) => acc + (Number(it.cant_enviada) || 0), 0);
+
         const badgeTipo = esEvento
-          ? '<span class="badge bg-info text-dark rounded-pill"><i class="bi bi-building-check me-1"></i>Envío a Evento (En Hotel)</span>'
-          : '<span class="badge bg-primary rounded-pill"><i class="bi bi-arrow-left-right me-1"></i>Traslado de Bodega</span>';
+          ? '<span class="badge bg-info text-dark rounded-pill"><i class="bi bi-building-check me-1"></i>A Evento / Hotel</span>'
+          : '<span class="badge bg-primary rounded-pill"><i class="bi bi-arrow-left-right me-1"></i>Traspaso Bodega</span>';
 
-        const badgeEstado = v.estado === "COMPLETADO"
-          ? '<span class="badge bg-success rounded-pill">Completado</span>'
-          : (v.estado === "CANCELADO" ? '<span class="badge bg-danger rounded-pill">Cancelado</span>' : '<span class="badge bg-warning text-dark rounded-pill">En Curso</span>');
+        const badgeEstado = est === "EN_CARGA"
+          ? '<span class="badge bg-warning text-dark rounded-pill"><i class="bi bi-box-seam me-1"></i>En Andén (Cargando)</span>'
+          : (est === "COMPLETADO"
+              ? '<span class="badge bg-success rounded-pill">Completado</span>'
+              : (est === "CANCELADO" ? '<span class="badge bg-danger rounded-pill">Cancelado</span>' : '<span class="badge bg-primary rounded-pill"><i class="bi bi-truck me-1"></i>En Ruta</span>'));
 
-        const listaArtHtml = (v.items || []).map(it => `
-          <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-theme small">
-            <div>
-              <span class="badge bg-secondary bg-opacity-10 text-dark-fix border me-1">${it.codigo_art}</span>
-              <strong>${it.nombre_art}</strong>
-              <span class="badge bg-primary bg-opacity-10 text-primary ms-1">ODS #${it.id_ods}</span>
-              <small class="text-muted ms-1">(${it.zona_origen} &rarr; ${it.zona_destino})</small>
-            </div>
-            <div>
-              <span class="fw-bold">${it.cant_enviada} pzas</span>
-              ${v.estado === "COMPLETADO" && it.novedad ? `<span class="badge bg-danger ms-1">${it.novedad}</span>` : ''}
-            </div>
-          </div>
-        `).join("");
+        const listaArtHtml = (v.items || []).length === 0
+          ? '<div class="small text-muted fst-italic py-1">Camión vacío en Andén. Haz clic en <b>Subir Cosas / Gestionar Carga</b> para agregar artículos.</div>'
+          : (v.items || []).map(it => `
+              <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-theme small">
+                <div>
+                  <span class="badge bg-secondary bg-opacity-10 text-dark-fix border me-1">${it.codigo_art}</span>
+                  <strong>${it.nombre_art}</strong>
+                  <span class="badge bg-primary bg-opacity-10 text-primary ms-1">ODS #${it.id_ods}</span>
+                  <small class="text-muted ms-1">(${it.zona_origen} &rarr; ${it.zona_destino})</small>
+                </div>
+                <div>
+                  <span class="fw-bold">${it.cant_enviada} pzas</span>
+                  ${est === "COMPLETADO" && it.novedad ? `<span class="badge bg-danger ms-1">${it.novedad}</span>` : ''}
+                </div>
+              </div>
+            `).join("");
+
+        let botonesAccion = "";
+        if (est === "EN_CARGA") {
+          botonesAccion = `
+            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold shadow-xs" onclick="abrirModalGestionCargaViaje('${v.id_viaje}')">
+              <i class="bi bi-box-arrow-in-up me-1"></i>Subir Cosas / Gestionar Carga (${totalPzas} pzas)
+            </button>
+            <button type="button" class="btn btn-sm btn-success rounded-pill px-3 fw-bold shadow-xs" onclick="darSalidaRapidaDesdeTarjeta('${v.id_viaje}')">
+              <i class="bi bi-send-check-fill me-1"></i>Dar Salida
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="cancelarViajeEnCurso('${v.id_viaje}')">
+              <i class="bi bi-x-circle me-1"></i>Cancelar
+            </button>
+          `;
+        } else if (est === "EN_RUTA" || est === "EN_CURSO") {
+          botonesAccion = `
+            <button type="button" class="btn btn-sm btn-success rounded-pill px-3 fw-bold shadow-xs" onclick="abrirModalCompletarViaje('${v.id_viaje}')">
+              <i class="bi bi-box-arrow-in-down me-1"></i>${esEvento ? 'Dar Entrada (Regresó de Evento)' : ('Dar Entrada en ' + v.destino)}
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="cancelarViajeEnCurso('${v.id_viaje}')">
+              <i class="bi bi-x-circle me-1"></i>Cancelar Viaje
+            </button>
+          `;
+        }
 
         return `
           <div class="bg-card rounded-4 border border-theme p-3 shadow-sm">
@@ -1882,22 +2414,14 @@
                   ${badgeEstado}
                 </div>
                 <div class="small text-muted mt-1">
-                  <b>Ruta:</b> ${v.bodega_origen} &rarr; <strong class="text-dark-fix">${v.destino}</strong>
-                  · <b>Vehículo:</b> ${v.vehiculo || 'N/A'} · <b>Chofer:</b> ${v.chofer || 'N/A'}
-                  · <b>Salida:</b> ${v.fecha_salida}
+                  <b>Ruta:</b> <span class="text-primary fw-bold">${v.bodega_origen}</span> &rarr; <strong class="text-dark-fix">${v.destino}</strong>
+                  · <b>Unidad:</b> ${v.vehiculo || 'N/A'} · <b>Chofer:</b> ${v.chofer || 'N/A'}
+                  · <b>Creado/Salida:</b> ${v.fecha_salida}
                 </div>
               </div>
-
-              ${v.estado === "EN_CURSO" ? `
-                <div class="d-flex align-items-center gap-2">
-                  <button type="button" class="btn btn-sm btn-success rounded-pill px-3 fw-bold" onclick="abrirModalCompletarViaje('${v.id_viaje}')">
-                    <i class="bi bi-check2-circle me-1"></i>${esEvento ? 'Completar (Regresó de Evento)' : 'Completar Viaje'}
-                  </button>
-                  <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="cancelarViajeEnCurso('${v.id_viaje}')">
-                    <i class="bi bi-x-circle me-1"></i>Cancelar Viaje
-                  </button>
-                </div>
-              ` : ''}
+              <div class="d-flex align-items-center flex-wrap gap-2">
+                ${botonesAccion}
+              </div>
             </div>
             <div class="mt-2 pt-2 border-top border-theme">
               ${listaArtHtml}
@@ -1907,32 +2431,25 @@
       }).join("");
     }
 
-    function abrirModalNuevoViaje() {
-      STATE.cargaViajeActual = [];
+    function abrirModalCrearCabeceraViaje() {
+      document.getElementById("viaje-select-origen").value = STATE.bodegaGlobal || "BONFIL";
       document.getElementById("viaje-ods-general").value = "";
       document.getElementById("viaje-fecha-ods-general").value = "";
       document.getElementById("viaje-evento-general").value = "";
-      document.getElementById("viaje-add-codigo").value = "";
-      document.getElementById("viaje-add-nombre").value = "";
-      document.getElementById("viaje-add-cant").value = "1";
-      document.getElementById("viaje-add-ods").value = "";
-      document.getElementById("viaje-add-fecha").value = "";
       cambiarTipoViajeModal("TRASLADO_BODEGA");
-      renderizarCargaViajeModal();
       new bootstrap.Modal(document.getElementById("modalNuevoViaje")).show();
     }
 
     function cambiarTipoViajeModal(tipo) {
       STATE.tipoViajeModal = tipo;
       const esEvento = tipo === "ENVIO_EVENTO";
-      document.getElementById("pill-viaje-traslado").classList.toggle("active", !esEvento);
-      document.getElementById("pill-viaje-evento").classList.toggle("active", esEvento);
+      const bTras = document.getElementById("pill-viaje-traslado");
+      const bEv = document.getElementById("pill-viaje-evento");
+      bTras.className = "btn btn-sm rounded-pill flex-fill fw-bold " + (!esEvento ? "btn-primary" : "");
+      bEv.className = "btn btn-sm rounded-pill flex-fill fw-bold " + (esEvento ? "btn-primary" : "");
 
       document.getElementById("bloque-ods-general-viaje").classList.toggle("d-none", !esEvento);
-      document.getElementById("col-viaje-add-ods-item").classList.toggle("d-none", esEvento);
-      document.getElementById("col-viaje-add-fecha-item").classList.toggle("d-none", esEvento);
-
-      document.getElementById("lbl-viaje-destino").textContent = esEvento ? "LOCACIÓN (HOTEL DESTINO) *" : "BODEGA DESTINO *";
+      document.getElementById("lbl-viaje-destino").textContent = esEvento ? "Locación / Hotel Destino *" : "Bodega Destino *";
       validarOrigenDestinoViaje();
     }
 
@@ -1942,7 +2459,6 @@
       if (!selDestino) return;
 
       if (STATE.tipoViajeModal === "TRASLADO_BODEGA") {
-        // Regla estricta: no permitir BONFIL -> BONFIL ni misma bodega
         const bodegas = ["BONFIL", "CEDIS", "PUERTO"].filter(b => b !== origen);
         selDestino.innerHTML = bodegas.map(b => `<option value="${b}">${b}</option>`).join("");
       } else {
@@ -1997,65 +2513,6 @@
       document.getElementById("viaje-suggest-ods-general").classList.add("d-none");
     }
 
-    function anadirArticuloACargaViaje() {
-      const codigo = document.getElementById("viaje-add-codigo").value.trim();
-      const nombre = document.getElementById("viaje-add-nombre").value.trim();
-      const cant = Number(document.getElementById("viaje-add-cant").value) || 0;
-      const esEvento = STATE.tipoViajeModal === "ENVIO_EVENTO";
-      const idOds = esEvento
-        ? document.getElementById("viaje-ods-general").value.trim()
-        : document.getElementById("viaje-add-ods").value.trim();
-
-      if (!codigo || !nombre || cant <= 0 || !idOds) {
-        Swal.fire("Faltan datos", "Completa Código, Nombre, Cantidad y la ODS correspondiente.", "warning");
-        return;
-      }
-
-      const odsObj = (STATE.ods || []).find(o => String(o.id_ods) === String(idOds)) || {};
-      const artCat = (STATE.catalogos.articulos || []).find(a => String(a.codigo) === String(codigo)) || {};
-
-      STATE.cargaViajeActual.push({
-        codigo_art: codigo,
-        nombre_art: nombre,
-        tipo_art: artCat.tipo || "MOBILIARIO",
-        cantidad: cant,
-        id_ods: idOds,
-        fecha_montaje: odsObj.fecha_montaje || document.getElementById("viaje-add-fecha").value || "",
-        nombre_evento: odsObj.nombre_evento || "",
-        locacion_nombre: odsObj.locacion_nombre || "",
-        vendedor_nombre: odsObj.vendedor_nombre || ""
-      });
-
-      document.getElementById("viaje-add-codigo").value = "";
-      document.getElementById("viaje-add-nombre").value = "";
-      document.getElementById("viaje-add-cant").value = "1";
-      renderizarCargaViajeModal();
-    }
-
-    function renderizarCargaViajeModal() {
-      const cont = document.getElementById("contenedor-carga-viaje");
-      if (STATE.cargaViajeActual.length === 0) {
-        cont.innerHTML = '<div class="text-center text-muted small py-3 border rounded-3">Agrega artículos a la carga de este viaje.</div>';
-        return;
-      }
-      cont.innerHTML = STATE.cargaViajeActual.map((it, idx) => `
-        <div class="p-2 rounded-3 border border-theme d-flex justify-content-between align-items-center">
-          <div>
-            <span class="badge bg-dark me-1">${it.codigo_art}</span>
-            <strong class="small">${it.nombre_art}</strong>
-            <span class="badge bg-primary ms-1">ODS #${it.id_ods}</span>
-            <small class="text-muted ms-1">(${it.fecha_montaje || 'S/F'})</small>
-          </div>
-          <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-primary rounded-pill">${it.cantidad} pzas</span>
-            <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="STATE.cargaViajeActual.splice(${idx},1); renderizarCargaViajeModal();">
-              <i class="bi bi-trash3"></i>
-            </button>
-          </div>
-        </div>
-      `).join("");
-    }
-
     async function confirmarCrearViaje() {
       const origen = document.getElementById("viaje-select-origen").value;
       const destino = document.getElementById("viaje-select-destino").value;
@@ -2065,13 +2522,8 @@
       const fMontGen = document.getElementById("viaje-fecha-ods-general").value.trim();
       const evGen = document.getElementById("viaje-evento-general").value.trim();
 
-      if (!origen || !destino || STATE.cargaViajeActual.length === 0) {
-        Swal.fire("Datos incompletos", "Selecciona origen, destino y sube al menos un artículo a la carga.", "warning");
-        return;
-      }
-
-      if (STATE.tipoViajeModal === "TRASLADO_BODEGA" && origen === destino) {
-        Swal.fire("Regla de Bodega", "No se puede hacer un envío de " + origen + " a la misma bodega.", "error");
+      if (!origen || !destino || !vehiculo || !chofer) {
+        Swal.fire("Datos incompletos", "Selecciona Origen, Destino, Unidad y Chofer.", "warning");
         return;
       }
 
@@ -2080,7 +2532,7 @@
 
       try {
         const res = await llamarApiPost({
-          action: "crearViaje",
+          action: "crearCabeceraViaje",
           payload: {
             tipo_viaje: STATE.tipoViajeModal,
             bodega_origen: origen,
@@ -2089,8 +2541,7 @@
             chofer: chofer,
             id_ods_general: idOdsGen,
             nombre_evento_general: evGen,
-            fecha_montaje_general: fMontGen,
-            items: STATE.cargaViajeActual
+            fecha_montaje_general: fMontGen
           }
         });
 
@@ -2100,11 +2551,11 @@
           STATE.historial = res.historial || STATE.historial;
           guardarCacheLocal();
           actualizarContadoresMenu();
-          renderizarListaViajes();
+          cambiarFiltroEstadoViajes("EN_CARGA");
           bootstrap.Modal.getInstance(document.getElementById("modalNuevoViaje")).hide();
-          Swal.fire({ icon: "success", title: "Viaje " + res.id_viaje + " registrado", timer: 1400, showConfirmButton: false });
+          abrirModalGestionCargaViaje(res.id_viaje);
         } else {
-          Swal.fire("Error", (res && res.error) || "No se pudo registrar el viaje", "error");
+          Swal.fire("Error", (res && res.error) || "No se pudo crear el viaje", "error");
         }
       } catch (e) {
         Swal.fire("Error de red", e.message, "error");
@@ -2113,17 +2564,270 @@
       }
     }
 
+    // =========================================================================
+    // GESTIÓN DE CARGA COLABORATIVA EN ANDÉN (SUBIR / BAJAR / DAR SALIDA)
+    // =========================================================================
+    function abrirModalGestionCargaViaje(idViaje) {
+      STATE.idViajeEnGestion = idViaje;
+      refrescarModalGestionCargaActual();
+      const modalEl = document.getElementById("modalGestionCargaViaje");
+      const inst = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      inst.show();
+    }
+
+    function refrescarModalGestionCargaActual() {
+      const v = (STATE.viajes || []).find(x => String(x.id_viaje) === String(STATE.idViajeEnGestion));
+      if (!v) return;
+
+      document.getElementById("carga-viaje-titulo").textContent = v.id_viaje;
+      document.getElementById("carga-viaje-subtitulo").textContent = `${v.bodega_origen} → ${v.destino} · Unidad: ${v.vehiculo} · Chofer: ${v.chofer}`;
+      document.getElementById("lbl-bodega-carga-origen").textContent = v.bodega_origen;
+
+      // Poblar selector de zonas origen según la bodega del viaje
+      const selZonaOrig = document.getElementById("viaje-add-zona-origen");
+      if (v.bodega_origen === "BONFIL") {
+        selZonaOrig.innerHTML = [
+          "BONFIL MOBILIARIO",
+          "BONFIL MANUALIDADES",
+          "BONFIL TELAS",
+          "BONFIL ILUMINACIÓN"
+        ].map(z => `<option value="${z}">${z}</option>`).join("");
+      } else {
+        selZonaOrig.innerHTML = `<option value="${v.bodega_origen}">${v.bodega_origen}</option>`;
+      }
+
+      if (v.id_ods_general) {
+        document.getElementById("viaje-add-ods").value = v.id_ods_general;
+      }
+
+      // 1. Renderizar artículos disponibles en las Zonas de Alistamiento de esa bodega origen
+      const contDisp = document.getElementById("contenedor-disponible-alistamiento-viaje");
+      const disponibles = (STATE.zonas || []).filter(z => {
+        if (v.bodega_origen === "BONFIL") return String(z.zona || "").toUpperCase().startsWith("BONFIL");
+        return String(z.zona || "").toUpperCase() === v.bodega_origen.toUpperCase();
+      });
+
+      if (disponibles.length === 0) {
+        contDisp.innerHTML = '<div class="text-center text-muted small py-2 border rounded-3 bg-card">No hay artículos en Zona de Alistamiento de ' + v.bodega_origen + '. Puedes agregarlos con el formulario de abajo.</div>';
+      } else {
+        contDisp.innerHTML = disponibles.map(z => `
+          <div class="p-2 rounded-3 border border-theme bg-card d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+              <span class="badge bg-secondary bg-opacity-10 text-dark-fix border me-1">${z.zona}</span>
+              <span class="badge bg-dark me-1">${z.codigo_art}</span>
+              <strong class="small">${z.nombre_art}</strong>
+              <span class="badge bg-primary ms-1">ODS #${z.id_ods}</span>
+              <span class="badge bg-success ms-1">Disp: ${z.cantidad}</span>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+              <input type="number" id="cant-subir-za-${z.id_reg}" class="form-control form-control-sm text-center fw-bold input-theme" style="width:68px;" value="${z.cantidad}" min="1" max="${z.cantidad}">
+              <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold" onclick="subirItemDeZonaACamion('${z.id_reg}')">
+                <i class="bi bi-arrow-up-circle me-1"></i>Subir al Camión
+              </button>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      // 2. Renderizar Manifiesto Arriba del Camión
+      const contMan = document.getElementById("contenedor-manifiesto-arriba-camion");
+      const itemsCamion = v.items || [];
+      const totalPzas = itemsCamion.reduce((acc, it) => acc + (Number(it.cant_enviada) || 0), 0);
+      document.getElementById("badge-total-arriba-camion").textContent = totalPzas + " pzas a bordo";
+
+      if (itemsCamion.length === 0) {
+        contMan.innerHTML = '<div class="text-center text-muted small py-4 border rounded-3">Aún no se han subido artículos a este camión.</div>';
+      } else {
+        contMan.innerHTML = itemsCamion.map(it => `
+          <div class="p-2 px-3 rounded-3 border border-theme d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+              <span class="badge bg-dark me-1">${it.codigo_art}</span>
+              <strong>${it.nombre_art}</strong>
+              <span class="badge bg-primary ms-1">ODS #${it.id_ods}</span>
+              <small class="text-muted ms-2">(${it.zona_origen} &rarr; ${it.zona_destino})</small>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-primary rounded-pill px-3 py-1">${it.cant_enviada} pzas</span>
+              ${v.estado === "EN_CARGA" ? `
+                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-0" onclick="bajarItemDeCamion('${v.id_viaje}', '${it.id_det}')" title="Bajar del camión y regresar a Zona de Alistamiento">
+                  <i class="bi bi-arrow-down-circle me-1"></i>Bajar
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `).join("");
+      }
+    }
+
+    async function subirItemDeZonaACamion(idRegZona) {
+      const z = (STATE.zonas || []).find(x => String(x.id_reg) === String(idRegZona));
+      if (!z || !STATE.idViajeEnGestion) return;
+      const inpCant = document.getElementById("cant-subir-za-" + idRegZona);
+      const cant = Math.min(z.cantidad, Math.max(1, Number(inpCant ? inpCant.value : z.cantidad) || 1));
+
+      const res = await llamarApiPost({
+        action: "subirItemsAViaje",
+        payload: {
+          id_viaje: STATE.idViajeEnGestion,
+          items: [{
+            codigo_art: z.codigo_art,
+            nombre_art: z.nombre_art,
+            tipo_art: z.tipo_art || "MOBILIARIO",
+            zona_origen: z.zona,
+            cantidad: cant,
+            id_ods: z.id_ods,
+            fecha_montaje: z.fecha_montaje,
+            locacion_nombre: z.locacion_nombre,
+            nombre_evento: z.nombre_evento
+          }]
+        }
+      });
+
+      if (res && res.exito) {
+        STATE.zonas = res.zonas || STATE.zonas;
+        STATE.viajes = res.viajes || STATE.viajes;
+        STATE.historial = res.historial || STATE.historial;
+        guardarCacheLocal();
+        actualizarContadoresMenu();
+        renderizarListaViajes();
+        refrescarModalGestionCargaActual();
+      } else {
+        Swal.fire("Error", (res && res.error) || "No se pudo subir al camión", "error");
+      }
+    }
+
+    async function subirArticuloDirectoAViaje() {
+      if (!STATE.idViajeEnGestion) return;
+      const zonaOrig = document.getElementById("viaje-add-zona-origen").value;
+      const codigo = document.getElementById("viaje-add-codigo").value.trim();
+      const nombre = document.getElementById("viaje-add-nombre").value.trim();
+      const idOds = document.getElementById("viaje-add-ods").value.trim();
+      const cant = Number(document.getElementById("viaje-add-cant").value) || 0;
+
+      if (!codigo || !nombre || !idOds || cant <= 0) {
+        Swal.fire("Faltan datos", "Completa Código, Nombre, ODS y Cantidad.", "warning");
+        return;
+      }
+
+      const odsObj = (STATE.ods || []).find(o => String(o.id_ods) === String(idOds)) || {};
+      const artCat = (STATE.catalogos.articulos || []).find(a => String(a.codigo) === String(codigo)) || {};
+
+      const res = await llamarApiPost({
+        action: "subirItemsAViaje",
+        payload: {
+          id_viaje: STATE.idViajeEnGestion,
+          items: [{
+            codigo_art: codigo,
+            nombre_art: nombre,
+            tipo_art: artCat.tipo || "MOBILIARIO",
+            zona_origen: zonaOrig,
+            cantidad: cant,
+            id_ods: idOds,
+            fecha_montaje: odsObj.fecha_montaje || document.getElementById("viaje-add-fecha").value || "",
+            locacion_nombre: odsObj.locacion_nombre || "",
+            nombre_evento: odsObj.nombre_evento || ""
+          }]
+        }
+      });
+
+      if (res && res.exito) {
+        document.getElementById("viaje-add-codigo").value = "";
+        document.getElementById("viaje-add-nombre").value = "";
+        document.getElementById("viaje-add-cant").value = "1";
+        STATE.zonas = res.zonas || STATE.zonas;
+        STATE.viajes = res.viajes || STATE.viajes;
+        STATE.historial = res.historial || STATE.historial;
+        guardarCacheLocal();
+        actualizarContadoresMenu();
+        renderizarListaViajes();
+        refrescarModalGestionCargaActual();
+      } else {
+        Swal.fire("Error", (res && res.error) || "No se pudo subir", "error");
+      }
+    }
+
+    async function bajarItemDeCamion(idViaje, idDet) {
+      const res = await llamarApiPost({
+        action: "bajarItemDeViaje",
+        id_viaje: idViaje,
+        id_det: idDet
+      });
+      if (res && res.exito) {
+        STATE.zonas = res.zonas || STATE.zonas;
+        STATE.viajes = res.viajes || STATE.viajes;
+        STATE.historial = res.historial || STATE.historial;
+        guardarCacheLocal();
+        actualizarContadoresMenu();
+        renderizarListaViajes();
+        refrescarModalGestionCargaActual();
+      }
+    }
+
+    async function confirmarDarSalidaViajeActual() {
+      if (!STATE.idViajeEnGestion) return;
+      await ejecutarDarSalidaViaje(STATE.idViajeEnGestion, true);
+    }
+
+    async function darSalidaRapidaDesdeTarjeta(idViaje) {
+      await ejecutarDarSalidaViaje(idViaje, false);
+    }
+
+    async function ejecutarDarSalidaViaje(idViaje, cerrarModalCarga) {
+      const v = (STATE.viajes || []).find(x => String(x.id_viaje) === String(idViaje));
+      if (!v) return;
+      if (!v.items || v.items.length === 0) {
+        Swal.fire("Camión vacío", "Súbele al menos un artículo al camión antes de darle salida a ruta.", "warning");
+        return;
+      }
+
+      const conf = await Swal.fire({
+        title: `¿Dar salida a ${v.id_viaje}?`,
+        text: `El camión saldrá de ${v.bodega_origen} hacia ${v.destino} y pasará a la pestaña En Ruta.`,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "🚚 Sí, Dar Salida",
+        cancelButtonText: "Cancelar"
+      });
+      if (!conf.isConfirmed) return;
+
+      const res = await llamarApiPost({
+        action: "darSalidaViaje",
+        id_viaje: idViaje,
+        usuario_nombre: STATE.usuario ? STATE.usuario.nombre : ""
+      });
+
+      if (res && res.exito) {
+        STATE.zonas = res.zonas || STATE.zonas;
+        STATE.viajes = res.viajes || STATE.viajes;
+        STATE.historial = res.historial || STATE.historial;
+        guardarCacheLocal();
+        actualizarContadoresMenu();
+        if (cerrarModalCarga) {
+          const modalEl = document.getElementById("modalGestionCargaViaje");
+          const inst = bootstrap.Modal.getInstance(modalEl);
+          if (inst) inst.hide();
+        }
+        cambiarFiltroEstadoViajes("EN_RUTA");
+        Swal.fire({ icon: "success", title: "Viaje " + idViaje + " en Ruta", timer: 1400, showConfirmButton: false });
+      } else {
+        Swal.fire("Error", (res && res.error) || "No se pudo dar salida", "error");
+      }
+    }
+
+    // =========================================================================
+    // PASO D: DAR ENTRADA / RECIBIR VIAJE EN BODEGA DESTINO O REGRESO DE EVENTO
+    // =========================================================================
     function abrirModalCompletarViaje(idViaje) {
       const v = (STATE.viajes || []).find(x => String(x.id_viaje) === String(idViaje));
       if (!v) return;
       STATE.viajeACompletar = v;
 
       document.getElementById("titulo-modal-completar-viaje").innerHTML =
-        `<i class="bi bi-check2-square text-success me-2"></i>Completar ${v.id_viaje} (${v.bodega_origen} &rarr; ${v.destino})`;
+        `<i class="bi bi-box-arrow-in-down text-success me-2"></i>Dar Entrada ${v.id_viaje} (${v.bodega_origen} &rarr; ${v.destino})`;
       document.getElementById("subtitulo-modal-completar-viaje").textContent =
         v.tipo_viaje === "ENVIO_EVENTO"
           ? "Confirmar regreso del mobiliario desde el hotel hacia la bodega"
-          : "Confirmar recepción del traslado en la bodega destino";
+          : "Confirmar recepción y entrada del traslado en la bodega destino (" + v.destino + ")";
       document.getElementById("input-obs-cierre-viaje").value = "";
 
       const cont = document.getElementById("contenedor-items-completar-viaje");
@@ -2167,7 +2871,7 @@
 
       try {
         const res = await llamarApiPost({
-          action: "completarViaje",
+          action: "darEntradaViaje",
           payload: {
             id_viaje: v.id_viaje,
             observaciones_cierre: obs,
@@ -2182,7 +2886,7 @@
           actualizarContadoresMenu();
           renderizarListaViajes();
           bootstrap.Modal.getInstance(document.getElementById("modalCompletarViaje")).hide();
-          Swal.fire({ icon: "success", title: "Viaje completado y stock actualizado", timer: 1400, showConfirmButton: false });
+          Swal.fire({ icon: "success", title: "Entrada registrada y Zona actualizada", timer: 1400, showConfirmButton: false });
         } else {
           Swal.fire("Error", (res && res.error) || "No se pudo completar el viaje", "error");
         }
@@ -2209,7 +2913,7 @@
       const res = await llamarApiPost({
         action: "cancelarViaje",
         id_viaje: idViaje,
-        motivo: conf.value || "Cancelado por administrador"
+        motivo: conf.value || "Cancelado"
       });
       if (res && res.exito) {
         STATE.zonas = res.zonas || STATE.zonas;
@@ -2222,7 +2926,7 @@
     }
 
     // =========================================================================
-    // MÓDULO 4: ETIQUETAS NIIMBOT B1 (50x30 mm - 384x240 px)
+    // SUB-MÓDULO DE ALISTAMIENTO: ETIQUETAS NIIMBOT B1 (50x30 mm - 384x240 px)
     // =========================================================================
     function mostrarSugerenciasODSEtiqueta(val) {
       const box = document.getElementById("etq-suggest-ods");
@@ -2409,23 +3113,30 @@
 
     function imprimirEtiquetaUSB() {
       const canvas = document.getElementById("labelCanvas");
-      const win = window.open("", "_blank", "width=450,height=300");
-      win.document.write(`
-        <html>
-          <head>
-            <title>Imprimir Niimbot B1</title>
-            <style>
-              @page { size: 50mm 30mm; margin: 0; }
-              body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; background: #fff; }
-              img { width: 50mm; height: 30mm; image-rendering: pixelated; }
-            </style>
-          </head>
-          <body onload="window.print(); window.close();">
-            <img src="${canvas.toDataURL('image/png')}" />
-          </body>
-        </html>
-      `);
-      win.document.close();
+      if (!canvas) return;
+      const dataUrl = canvas.toDataURL("image/png");
+
+      let printArea = document.getElementById("print-only-area");
+      if (!printArea) {
+        printArea = document.createElement("div");
+        printArea.id = "print-only-area";
+        document.body.appendChild(printArea);
+      }
+
+      printArea.innerHTML = `<img id="img-etiqueta-print-direct" src="${dataUrl}" alt="Etiqueta 50x30" />`;
+      const imgEl = document.getElementById("img-etiqueta-print-direct");
+
+      const lanzarPrint = function() {
+        setTimeout(function() {
+          window.print();
+        }, 120);
+      };
+
+      if (imgEl && imgEl.complete) {
+        lanzarPrint();
+      } else if (imgEl) {
+        imgEl.onload = lanzarPrint;
+      }
     }
 
     function empaquetarNiimbot(cmd, payload = []) {
@@ -2526,7 +3237,7 @@
     }
 
     // =========================================================================
-    // MÓDULO 5: CONSULTAR MOVIMIENTO (POR ODS, POR ARTÍCULO, POR BODEGA)
+    // SUB-MÓDULO DE TRASLADOS: CONSULTAR MOVIMIENTO (ODS / ARTÍCULO / BODEGA)
     // =========================================================================
     function cambiarModoConsulta(modo) {
       STATE.modoConsulta = modo;
@@ -2607,4 +3318,3 @@
   </script>
 </body>
 </html>
-
