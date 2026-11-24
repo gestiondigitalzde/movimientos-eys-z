@@ -12,8 +12,8 @@
 const EYS_CONFIG = {
   IDS: {
     SS_INVENTARIO: "1Av2UJLq7zOi4zlzt7PLYXhOV34qV_SIYUcIPwaF-od4",
-    SS_CATALOGOS:  "1qFbcn2alEpRsTQWREsElbLSbuPC4LJNdu7KDtdkn2UU",
-    SS_OPERACION:  "1VfgdfLmmIti2XljXAepw7_xcqv1ZQ73g3f071FQaSVk"
+    SS_CATALOGOS: "1qFbcn2alEpRsTQWREsElbLSbuPC4LJNdu7KDtdkn2UU",
+    SS_OPERACION: "1VfgdfLmmIti2XljXAepw7_xcqv1ZQ73g3f071FQaSVk"
   },
   ZONAS_VALIDAS: [
     "BONFIL MOBILIARIO",
@@ -210,7 +210,17 @@ function doPost(e) {
         return _jsonResponse(apiAgregarAZonaManual(body.zona, body.items));
 
       case "ajustarItemZona":
-        return _jsonResponse(apiAjustarItemZona(body.id_reg, body.nueva_cantidad));
+      case "regresarAlmacenZona":
+        return _jsonResponse(apiAjustarItemZona(body.id_reg, body.nueva_cantidad, body.motivo || "REGRESO_A_ALMACEN"));
+
+      case "editarItemZona":
+        return _jsonResponse(apiEditarItemZona(body.payload || body));
+
+      case "crearVendedor":
+        return _jsonResponse(apiCrearVendedor(body.payload || body));
+
+      case "crearLocacion":
+        return _jsonResponse(apiCrearLocacion(body.payload || body));
 
       case "crearCabeceraViaje":
         return _jsonResponse(apiCrearCabeceraViaje(body.payload || body));
@@ -229,7 +239,11 @@ function doPost(e) {
 
       case "completarViaje":
       case "darEntradaViaje":
+      case "tomarItemsDeVehiculo":
         return _jsonResponse(apiCompletarViaje(body.payload || body));
+
+      case "crearReporteViajeLocacion":
+        return _jsonResponse(apiCrearReporteViajeLocacion(body.payload || body));
 
       case "cancelarViaje":
         return _jsonResponse(apiCancelarViaje(body.id_viaje, body.motivo || ""));
@@ -306,7 +320,7 @@ function _formatearFechaHora(val) {
 
 function _garantizarHojasOperacion(ssOp) {
   const definiciones = EYS_CONFIG.HOJAS_OP;
-  Object.keys(definiciones).forEach(function(key) {
+  Object.keys(definiciones).forEach(function (key) {
     const def = definiciones[key];
     let sheet = ssOp.getSheetByName(def.NOMBRE);
     if (!sheet) {
@@ -371,7 +385,7 @@ function _normalizarUrlFotoDrive(rawFoto) {
 function _generarHashPIN(pin) {
   if (!pin) return "";
   const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(pin).trim());
-  return digest.map(function(byte) {
+  return digest.map(function (byte) {
     const v = (byte < 0) ? byte + 256 : byte;
     return v.toString(16).padStart(2, "0");
   }).join("");
@@ -391,17 +405,17 @@ function apiLoginUsuario(email, pin) {
 
   if (sheetEmp && sheetEmp.getLastRow() >= 2) {
     const data = sheetEmp.getDataRange().getValues();
-    const headers = data[0].map(function(h) { return String(h || "").trim().toLowerCase(); });
+    const headers = data[0].map(function (h) { return String(h || "").trim().toLowerCase(); });
 
-    const idxId    = headers.indexOf("id_empleado") !== -1 ? headers.indexOf("id_empleado") : 0;
-    const idxNom   = headers.indexOf("nombre") !== -1 ? headers.indexOf("nombre") : 1;
+    const idxId = headers.indexOf("id_empleado") !== -1 ? headers.indexOf("id_empleado") : 0;
+    const idxNom = headers.indexOf("nombre") !== -1 ? headers.indexOf("nombre") : 1;
     const idxEmail = headers.indexOf("email") !== -1 ? headers.indexOf("email") : 2;
-    const idxPin   = headers.indexOf("pin") !== -1 ? headers.indexOf("pin") : 3;
+    const idxPin = headers.indexOf("pin") !== -1 ? headers.indexOf("pin") : 3;
     const idxDepto = headers.indexOf("departamento") !== -1 ? headers.indexOf("departamento") : 4;
-    const idxRol   = headers.indexOf("rol") !== -1 ? headers.indexOf("rol") : 5;
+    const idxRol = headers.indexOf("rol") !== -1 ? headers.indexOf("rol") : 5;
     const idxNivel = headers.indexOf("id_nivel") !== -1 ? headers.indexOf("id_nivel") : 6;
-    const idxFoto  = headers.indexOf("foto_emple_url") !== -1 ? headers.indexOf("foto_emple_url") : 10;
-    const idxBode  = headers.indexOf("id_bode") !== -1 ? headers.indexOf("id_bode") : 14;
+    const idxFoto = headers.indexOf("foto_emple_url") !== -1 ? headers.indexOf("foto_emple_url") : 10;
+    const idxBode = headers.indexOf("id_bode") !== -1 ? headers.indexOf("id_bode") : 14;
 
     for (let i = 1; i < data.length; i++) {
       const fila = data[i];
@@ -443,10 +457,10 @@ function apiSolicitarCodigoPin(email) {
   if (!sheetEmp) return { exito: false, message: "No se encontró la hoja EMPLEADO." };
 
   const data = sheetEmp.getDataRange().getValues();
-  const headers = data[0].map(function(h) { return String(h || "").trim().toLowerCase(); });
+  const headers = data[0].map(function (h) { return String(h || "").trim().toLowerCase(); });
   const idxEmail = headers.indexOf("email") !== -1 ? headers.indexOf("email") : 2;
-  const idxCod   = headers.indexOf("codi_temp") !== -1 ? headers.indexOf("codi_temp") : 8;
-  const idxExp   = headers.indexOf("expira_codi_temp") !== -1 ? headers.indexOf("expira_codi_temp") : 9;
+  const idxCod = headers.indexOf("codi_temp") !== -1 ? headers.indexOf("codi_temp") : 8;
+  const idxExp = headers.indexOf("expira_codi_temp") !== -1 ? headers.indexOf("expira_codi_temp") : 9;
 
   for (let i = 1; i < data.length; i++) {
     const emailHoja = String(data[i][idxEmail] || "").trim().toLowerCase();
@@ -482,10 +496,10 @@ function apiVerificarCodigoPin(email, codigoIngresado) {
   if (!sheetEmp) return { exito: false, message: "Hoja EMPLEADO no disponible." };
 
   const data = sheetEmp.getDataRange().getValues();
-  const headers = data[0].map(function(h) { return String(h || "").trim().toLowerCase(); });
+  const headers = data[0].map(function (h) { return String(h || "").trim().toLowerCase(); });
   const idxEmail = headers.indexOf("email") !== -1 ? headers.indexOf("email") : 2;
-  const idxCod   = headers.indexOf("codi_temp") !== -1 ? headers.indexOf("codi_temp") : 8;
-  const idxExp   = headers.indexOf("expira_codi_temp") !== -1 ? headers.indexOf("expira_codi_temp") : 9;
+  const idxCod = headers.indexOf("codi_temp") !== -1 ? headers.indexOf("codi_temp") : 8;
+  const idxExp = headers.indexOf("expira_codi_temp") !== -1 ? headers.indexOf("expira_codi_temp") : 9;
 
   for (let i = 1; i < data.length; i++) {
     const emailHoja = String(data[i][idxEmail] || "").trim().toLowerCase();
@@ -512,11 +526,11 @@ function apiActualizarPin(email, nuevoPin) {
   const ssCat = SpreadsheetApp.openById(EYS_CONFIG.IDS.SS_CATALOGOS);
   const sheetEmp = ssCat.getSheetByName("EMPLEADO");
   const data = sheetEmp.getDataRange().getValues();
-  const headers = data[0].map(function(h) { return String(h || "").trim().toLowerCase(); });
+  const headers = data[0].map(function (h) { return String(h || "").trim().toLowerCase(); });
   const idxEmail = headers.indexOf("email") !== -1 ? headers.indexOf("email") : 2;
-  const idxPin   = headers.indexOf("pin") !== -1 ? headers.indexOf("pin") : 3;
-  const idxCod   = headers.indexOf("codi_temp") !== -1 ? headers.indexOf("codi_temp") : 8;
-  const idxExp   = headers.indexOf("expira_codi_temp") !== -1 ? headers.indexOf("expira_codi_temp") : 9;
+  const idxPin = headers.indexOf("pin") !== -1 ? headers.indexOf("pin") : 3;
+  const idxCod = headers.indexOf("codi_temp") !== -1 ? headers.indexOf("codi_temp") : 8;
+  const idxExp = headers.indexOf("expira_codi_temp") !== -1 ? headers.indexOf("expira_codi_temp") : 9;
 
   for (let i = 1; i < data.length; i++) {
     const emailHoja = String(data[i][idxEmail] || "").trim().toLowerCase();
@@ -560,6 +574,7 @@ function _leerCatalogosExternos() {
   const resultado = {
     articulos: [],
     locaciones: [],
+    regiones: [],
     vendedores: [],
     vehiculos: [],
     choferes: []
@@ -592,9 +607,36 @@ function _leerCatalogosExternos() {
     Logger.log("Aviso leyendo INVENTARIO: " + eInv.message);
   }
 
-  // B. Leer LOCACION, VENDEDOR, VEHICULO, PLANTA y PUESTO
+  // B. Leer REGION, LOCACION, VENDEDOR, VEHICULO, PLANTA y PUESTO
   try {
     const ssCat = SpreadsheetApp.openById(EYS_CONFIG.IDS.SS_CATALOGOS);
+
+    const mapaRegionesNombre = {};
+    const sheetReg = ssCat.getSheetByName("REGION");
+    if (sheetReg && sheetReg.getLastRow() > 1) {
+      const dReg = sheetReg.getDataRange().getValues();
+      for (let r = 1; r < dReg.length; r++) {
+        const idReg = String(dReg[r][0] || "").trim();
+        const nomReg = String(dReg[r][1] || "").trim();
+        const idSedeR = String(dReg[r][2] || "1").trim();
+        if (nomReg) {
+          mapaRegionesNombre[idReg] = nomReg;
+          resultado.regiones.push({
+            id: idReg || nomReg,
+            nombre: nomReg,
+            id_sede: idSedeR
+          });
+        }
+      }
+    }
+    if (resultado.regiones.length === 0) {
+      resultado.regiones = [
+        { id: "1", nombre: "Zona Hotelera", id_sede: "1" },
+        { id: "2", nombre: "Costa Mujeres", id_sede: "1" },
+        { id: "3", nombre: "Puerto Aventuras", id_sede: "1" },
+        { id: "4", nombre: "Zona Cabos", id_sede: "2" }
+      ];
+    }
 
     const sheetLoc = ssCat.getSheetByName("LOCACION");
     if (sheetLoc && sheetLoc.getLastRow() > 1) {
@@ -602,15 +644,18 @@ function _leerCatalogosExternos() {
       for (let i = 1; i < dLoc.length; i++) {
         const idLoc = String(dLoc[i][0] || "").trim();
         const nomLoc = String(dLoc[i][1] || "").trim();
+        const idRegLoc = String(dLoc[i][2] || "").trim();
         if (nomLoc) {
           resultado.locaciones.push({
             id: idLoc || nomLoc,
             nombre: nomLoc,
+            id_region: idRegLoc,
+            region_nombre: mapaRegionesNombre[idRegLoc] || idRegLoc || "",
             foto: _normalizarUrlFotoDrive(dLoc[i][3])
           });
         }
       }
-      resultado.locaciones.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
+      resultado.locaciones.sort(function (a, b) { return a.nombre.localeCompare(b.nombre); });
     }
 
     const sheetVen = ssCat.getSheetByName("VENDEDOR");
@@ -619,11 +664,12 @@ function _leerCatalogosExternos() {
       for (let i = 1; i < dVen.length; i++) {
         const idVen = String(dVen[i][0] || "").trim();
         const nomVen = String(dVen[i][1] || "").trim();
+        const sedeVen = String(dVen[i][2] || "1").trim();
         if (nomVen) {
-          resultado.vendedores.push({ id: idVen || nomVen, nombre: nomVen });
+          resultado.vendedores.push({ id: idVen || nomVen, nombre: nomVen, id_sede: sedeVen });
         }
       }
-      resultado.vendedores.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
+      resultado.vendedores.sort(function (a, b) { return a.nombre.localeCompare(b.nombre); });
     }
 
     const sheetVeh = ssCat.getSheetByName("VEHICULO");
@@ -656,13 +702,13 @@ function _leerCatalogosExternos() {
     const sheetPlanta = ssCat.getSheetByName("PLANTA");
     if (sheetPlanta && sheetPlanta.getLastRow() > 1) {
       const dPla = sheetPlanta.getDataRange().getValues();
-      const headersPla = dPla[0].map(function(h) { return String(h || "").trim().toLowerCase(); });
+      const headersPla = dPla[0].map(function (h) { return String(h || "").trim().toLowerCase(); });
       const idxIdEmp = headersPla.indexOf("id_empleado") !== -1 ? headersPla.indexOf("id_empleado") : 0;
-      const idxNom   = headersPla.indexOf("nombre") !== -1 ? headersPla.indexOf("nombre") : 1;
-      const idxApe   = headersPla.indexOf("apellido") !== -1 ? headersPla.indexOf("apellido") : 2;
+      const idxNom = headersPla.indexOf("nombre") !== -1 ? headersPla.indexOf("nombre") : 1;
+      const idxApe = headersPla.indexOf("apellido") !== -1 ? headersPla.indexOf("apellido") : 2;
       const idxFotoP = headersPla.indexOf("foto_id") !== -1 ? headersPla.indexOf("foto_id") : 4;
-      const idxPue   = headersPla.indexOf("id_puesto") !== -1 ? headersPla.indexOf("id_puesto") : 14;
-      const idxAct   = headersPla.indexOf("activo") !== -1 ? headersPla.indexOf("activo") : 18;
+      const idxPue = headersPla.indexOf("id_puesto") !== -1 ? headersPla.indexOf("id_puesto") : 14;
+      const idxAct = headersPla.indexOf("activo") !== -1 ? headersPla.indexOf("activo") : 18;
 
       const listaChoferesPuesto = [];
       const listaPlantaGeneral = [];
@@ -692,7 +738,7 @@ function _leerCatalogosExternos() {
         }
       }
 
-      resultado.choferes = (listaChoferesPuesto.length > 0 ? listaChoferesPuesto.concat(listaPlantaGeneral.filter(function(x){ return !x.es_chofer; })) : listaPlantaGeneral);
+      resultado.choferes = (listaChoferesPuesto.length > 0 ? listaChoferesPuesto.concat(listaPlantaGeneral.filter(function (x) { return !x.es_chofer; })) : listaPlantaGeneral);
     }
   } catch (eCat) {
     Logger.log("Aviso leyendo Catálogos ERP: " + eCat.message);
@@ -726,7 +772,7 @@ function _leerEstadoOperativoCompleto(ssOp) {
       });
     }
   }
-  listaODS.sort(function(a, b) {
+  listaODS.sort(function (a, b) {
     return String(a.fecha_montaje || "9999").localeCompare(String(b.fecha_montaje || "9999"));
   });
 
@@ -821,7 +867,7 @@ function _leerEstadoOperativoCompleto(ssOp) {
       });
     }
   }
-  listaViajes.sort(function(a, b) {
+  listaViajes.sort(function (a, b) {
     return String(b.fecha_salida || "").localeCompare(String(a.fecha_salida || ""));
   });
 
@@ -860,7 +906,7 @@ function _leerEstadoOperativoCompleto(ssOp) {
       });
     }
   }
-  listaHistorial.sort(function(a, b) {
+  listaHistorial.sort(function (a, b) {
     return String(b.fecha_hora || "").localeCompare(String(a.fecha_hora || ""));
   });
 
@@ -1095,7 +1141,7 @@ function apiAgregarAZonaManual(zona, items) {
     const bodegaBase = _obtenerBodegaBaseDeZona(zonaClean);
     const ahora = _ahoraStr();
 
-    (items || []).forEach(function(it) {
+    (items || []).forEach(function (it) {
       const cant = Number(it.cantidad) || 0;
       if (!it.codigo_art || cant <= 0) return;
       _modificarStockZona(sheetZonas, {
@@ -1145,15 +1191,134 @@ function apiAgregarAZonaManual(zona, items) {
 }
 
 /**
- * 5. AJUSTAR O RETIRAR ARTÍCULO DE ZONA DE ALISTAMIENTO
+ * 5A-BIS. EDITAR UN REGISTRO EN ZONA DE ALISTAMIENTO (CORREGIR ODS, CANTIDAD O ARTÍCULO)
  */
-function apiAjustarItemZona(idReg, nuevaCantidad) {
+function apiEditarItemZona(payload) {
   const lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
     const ssOp = SpreadsheetApp.openById(EYS_CONFIG.IDS.SS_OPERACION);
     _garantizarHojasOperacion(ssOp);
     const sheetZonas = ssOp.getSheetByName(EYS_CONFIG.HOJAS_OP.ZONAS.NOMBRE);
+    const sheetHist = ssOp.getSheetByName(EYS_CONFIG.HOJAS_OP.HISTORIAL.NOMBRE);
+    const data = sheetZonas.getDataRange().getValues();
+
+    const idReg = String(payload.id_reg || "").trim();
+    const nuevoCod = String(payload.codigo_art || "").trim().toUpperCase();
+    const nuevoNom = String(payload.nombre_art || "").trim();
+    const nuevoTipo = String(payload.tipo_art || "MOBILIARIO").trim();
+    const nuevaCant = Math.max(1, Number(payload.cantidad) || 1);
+    const nuevaOds = String(payload.id_ods || "").trim();
+    const nuevaFechaMont = _formatearFechaHora(payload.fecha_montaje);
+    const nuevaLoc = String(payload.locacion_nombre || "").trim();
+    const nuevoEv = String(payload.nombre_evento || "").trim();
+    const ahora = _ahoraStr();
+
+    if (!idReg || !nuevoCod || !nuevoNom || !nuevaOds) {
+      return { exito: false, error: "Completa Código, Artículo, ODS y Cantidad." };
+    }
+
+    let filaEditar = -1;
+    let zonaActual = "";
+    let bodegaBase = "";
+    let antResumen = "";
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0] || "").trim() === idReg && data[i][12] !== 0 && String(data[i][12]) !== "0") {
+        filaEditar = i + 1;
+        zonaActual = String(data[i][1] || "").trim().toUpperCase();
+        bodegaBase = String(data[i][2] || "").trim() || _obtenerBodegaBaseDeZona(zonaActual);
+        antResumen = "ODS #" + data[i][7] + " · " + data[i][3] + " x " + data[i][6];
+        break;
+      }
+    }
+
+    if (filaEditar === -1) {
+      return { exito: false, error: "No se encontró el registro en la zona de alistamiento." };
+    }
+
+    // Verificar si ya existe otro renglón activo en la misma zona con el mismo nuevoCod + nuevaOds
+    let filaDuplicada = -1;
+    let cantDuplicada = 0;
+    for (let j = 1; j < data.length; j++) {
+      if (j + 1 === filaEditar) continue;
+      if (data[j][12] === 0 || String(data[j][12]) === "0") continue;
+      const zRow = String(data[j][1] || "").trim().toUpperCase();
+      const cRow = String(data[j][3] || "").trim().toUpperCase();
+      const oRow = String(data[j][7] || "").trim();
+      if (zRow === zonaActual && cRow === nuevoCod && oRow === nuevaOds) {
+        filaDuplicada = j + 1;
+        cantDuplicada = Number(data[j][6]) || 0;
+        break;
+      }
+    }
+
+    if (filaDuplicada > 0) {
+      sheetZonas.getRange(filaDuplicada, 7).setValue(cantDuplicada + nuevaCant);
+      sheetZonas.getRange(filaDuplicada, 8, 1, 5).setValues([[nuevaOds, nuevaFechaMont, nuevaLoc, nuevoEv, ahora]]);
+      sheetZonas.getRange(filaEditar, 7).setValue(0);
+      sheetZonas.getRange(filaEditar, 12).setValue(ahora);
+      sheetZonas.getRange(filaEditar, 13).setValue(0);
+    } else {
+      sheetZonas.getRange(filaEditar, 4, 1, 9).setValues([[
+        nuevoCod,
+        nuevoNom,
+        nuevoTipo,
+        nuevaCant,
+        nuevaOds,
+        nuevaFechaMont,
+        nuevaLoc,
+        nuevoEv,
+        ahora
+      ]]);
+    }
+
+    if (sheetHist) {
+      _registrarHistorial(sheetHist, {
+        fecha_hora: ahora,
+        id_viaje: "EDICION-ZONA",
+        tipo_movimiento: "EDICION_ZONA_ALISTAMIENTO",
+        bodega_origen: bodegaBase,
+        zona_origen: zonaActual,
+        bodega_destino: bodegaBase,
+        zona_destino: zonaActual,
+        id_ods: nuevaOds,
+        nombre_evento: nuevoEv,
+        locacion_nombre: nuevaLoc,
+        vendedor_nombre: "",
+        fecha_ods: nuevaFechaMont,
+        codigo_art: nuevoCod,
+        nombre_art: nuevoNom,
+        cantidad: nuevaCant,
+        vehiculo: "",
+        chofer: "",
+        novedad: "",
+        resumen_texto: "✏️ Editado en " + zonaActual + " (Antes: " + antResumen + " -> Ahora: ODS #" + nuevaOds + " · " + nuevoCod + " x " + nuevaCant + ")"
+      });
+    }
+
+    const estadoOp = _leerEstadoOperativoCompleto(ssOp);
+    return {
+      exito: true,
+      zonas: estadoOp.zonas,
+      historial: estadoOp.historial
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * 5. AJUSTAR O RETIRAR ARTÍCULO DE ZONA DE ALISTAMIENTO (REGRESAR A ALMACÉN)
+ */
+function apiAjustarItemZona(idReg, nuevaCantidad, motivo) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const ssOp = SpreadsheetApp.openById(EYS_CONFIG.IDS.SS_OPERACION);
+    _garantizarHojasOperacion(ssOp);
+    const sheetZonas = ssOp.getSheetByName(EYS_CONFIG.HOJAS_OP.ZONAS.NOMBRE);
+    const sheetHist = ssOp.getSheetByName(EYS_CONFIG.HOJAS_OP.HISTORIAL.NOMBRE);
     const data = sheetZonas.getDataRange().getValues();
     const target = String(idReg || "").trim();
     const cantNum = Math.max(0, Number(nuevaCantidad) || 0);
@@ -1161,17 +1326,148 @@ function apiAjustarItemZona(idReg, nuevaCantidad) {
 
     for (let i = 1; i < data.length; i++) {
       if (String(data[i][0] || "").trim() === target && data[i][12] !== 0 && String(data[i][12]) !== "0") {
+        const cantAnterior = Number(data[i][6]) || 0;
+        const cantRetirada = Math.max(0, cantAnterior - cantNum);
+        const zonaActual = String(data[i][1] || "").trim();
+        const bodegaBase = String(data[i][2] || "").trim() || _obtenerBodegaBaseDeZona(zonaActual);
+        const codArt = String(data[i][3] || "").trim();
+        const nomArt = String(data[i][4] || "").trim();
+        const idOds = String(data[i][7] || "").trim();
+        const fMont = _formatearFechaHora(data[i][8]);
+        const locNom = String(data[i][9] || "").trim();
+        const nomEv = String(data[i][10] || "").trim();
+
         sheetZonas.getRange(i + 1, 7).setValue(cantNum);
         sheetZonas.getRange(i + 1, 12).setValue(ahora);
         if (cantNum === 0) {
           sheetZonas.getRange(i + 1, 13).setValue(0);
+        }
+
+        if (cantRetirada > 0 && sheetHist) {
+          _registrarHistorial(sheetHist, {
+            fecha_hora: ahora,
+            id_viaje: "REGRESO-ALM",
+            tipo_movimiento: motivo || "REGRESO_A_ALMACEN",
+            bodega_origen: bodegaBase,
+            zona_origen: zonaActual,
+            bodega_destino: bodegaBase,
+            zona_destino: "ALMACÉN",
+            id_ods: idOds,
+            nombre_evento: nomEv,
+            locacion_nombre: locNom,
+            vendedor_nombre: "",
+            fecha_ods: fMont,
+            codigo_art: codArt,
+            nombre_art: nomArt,
+            cantidad: cantRetirada,
+            vehiculo: "",
+            chofer: "",
+            novedad: "",
+            resumen_texto: "↩️ ODS " + idOds + " x " + cantRetirada + " (" + nomArt + ") regresó de zona " + zonaActual + " a Almacén"
+          });
         }
         break;
       }
     }
 
     const estadoOp = _leerEstadoOperativoCompleto(ssOp);
-    return { exito: true, zonas: estadoOp.zonas };
+    return {
+      exito: true,
+      zonas: estadoOp.zonas,
+      historial: estadoOp.historial
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * 5B. CREAR NUEVO VENDEDOR EN SS_CATALOGOS (HOJA VENDEDOR) ASIGNADO A LA SEDE ACTIVA
+ */
+function apiCrearVendedor(payload) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const nombre = String(payload.nombre || "").trim();
+    const idSede = Number(payload.id_sede) || 1;
+    if (!nombre) {
+      return { exito: false, error: "Ingresa el nombre del vendedor." };
+    }
+
+    const ssCat = SpreadsheetApp.openById(EYS_CONFIG.IDS.SS_CATALOGOS);
+    let sheetVen = ssCat.getSheetByName("VENDEDOR");
+    if (!sheetVen) {
+      sheetVen = ssCat.insertSheet("VENDEDOR");
+      sheetVen.appendRow(["id_vent", "nombre", "id_sede"]);
+    }
+
+    const data = sheetVen.getDataRange().getValues();
+    let maxId = 0;
+    for (let i = 1; i < data.length; i++) {
+      const idNum = Number(data[i][0]) || 0;
+      if (idNum > maxId) maxId = idNum;
+      const nomExist = String(data[i][1] || "").trim().toLowerCase();
+      if (nomExist === nombre.toLowerCase()) {
+        return { exito: false, error: "Ya existe un vendedor con el nombre '" + nombre + "'." };
+      }
+    }
+
+    const nuevoId = maxId + 1;
+    sheetVen.appendRow([nuevoId, nombre, idSede]);
+    SpreadsheetApp.flush();
+
+    const catalogos = _leerCatalogosExternos();
+    return {
+      exito: true,
+      vendedor: { id: String(nuevoId), nombre: nombre, id_sede: String(idSede) },
+      vendedores: catalogos.vendedores
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * 5C. CREAR NUEVA LOCACIÓN EN SS_CATALOGOS (HOJA LOCACION) CON SU REGIÓN
+ */
+function apiCrearLocacion(payload) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const nombre = String(payload.nombre || "").trim();
+    const idRegion = String(payload.id_region || "1").trim();
+    if (!nombre) {
+      return { exito: false, error: "Ingresa el nombre de la locación." };
+    }
+
+    const ssCat = SpreadsheetApp.openById(EYS_CONFIG.IDS.SS_CATALOGOS);
+    let sheetLoc = ssCat.getSheetByName("LOCACION");
+    if (!sheetLoc) {
+      sheetLoc = ssCat.insertSheet("LOCACION");
+      sheetLoc.appendRow(["id_locacion", "nombre", "id_region", "foto"]);
+    }
+
+    const data = sheetLoc.getDataRange().getValues();
+    let maxId = 0;
+    for (let i = 1; i < data.length; i++) {
+      const idNum = Number(data[i][0]) || 0;
+      if (idNum > maxId) maxId = idNum;
+      const nomExist = String(data[i][1] || "").trim().toLowerCase();
+      if (nomExist === nombre.toLowerCase()) {
+        return { exito: false, error: "Ya existe una locación con el nombre '" + nombre + "'." };
+      }
+    }
+
+    const nuevoId = maxId + 1;
+    sheetLoc.appendRow([nuevoId, nombre, Number(idRegion) || idRegion, ""]);
+    SpreadsheetApp.flush();
+
+    const catalogos = _leerCatalogosExternos();
+    return {
+      exito: true,
+      locacion: { id: String(nuevoId), nombre: nombre, id_region: idRegion },
+      locaciones: catalogos.locaciones
+    };
   } finally {
     lock.releaseLock();
   }
@@ -1289,11 +1585,12 @@ function apiSubirItemsAViaje(payload) {
     if (!infoViaje) {
       return { exito: false, error: "No se encontró el viaje " + idViaje };
     }
-    if (infoViaje.estado !== "EN_CARGA") {
-      return { exito: false, error: "Solo se pueden subir cosas cuando el viaje está en Andén (En Carga)." };
+    if (infoViaje.estado !== "EN_CARGA" && infoViaje.estado !== "EN_RUTA") {
+      return { exito: false, error: "Solo se pueden subir cosas cuando el viaje está en Andén o en Escala (En Ruta)." };
     }
+    const estadoItemNuevo = infoViaje.estado === "EN_RUTA" ? "EN_RUTA" : "EN_CARGA";
 
-    items.forEach(function(it) {
+    items.forEach(function (it) {
       const cant = Number(it.cantidad) || 0;
       if (!it.codigo_art || cant <= 0) return;
 
@@ -1316,19 +1613,22 @@ function apiSubirItemsAViaje(payload) {
         zonaDestinoItem = "LOCACIONES";
       }
 
-      // Descontar de la Zona de Alistamiento Origen al subirlo al camión
-      _modificarStockZona(sheetZonas, {
-        zona: zonaOrigenItem,
-        codigo_art: it.codigo_art,
-        nombre_art: it.nombre_art,
-        tipo_art: tipoArt,
-        id_ods: idOdsItem,
-        fecha_montaje: fMontItem,
-        locacion_nombre: locItem,
-        nombre_evento: nomEvItem,
-        delta: -cant
-      });
+      // Descontar de la Zona de Alistamiento Origen al subirlo al camión (salvo si es un EXTRA libre que no proviene de stock de zona)
+      if (!it.es_extra) {
+        _modificarStockZona(sheetZonas, {
+          zona: zonaOrigenItem,
+          codigo_art: it.codigo_art,
+          nombre_art: it.nombre_art,
+          tipo_art: tipoArt,
+          id_ods: idOdsItem,
+          fecha_montaje: fMontItem,
+          locacion_nombre: locItem,
+          nombre_evento: nomEvItem,
+          delta: -cant
+        });
+      }
 
+      const obsItem = String(it.observaciones || it.novedad || "").trim();
       const idDet = idViaje + "-D" + new Date().getTime() + "-" + Math.floor(Math.random() * 900 + 100);
       sheetDet.appendRow([
         idDet,
@@ -1345,8 +1645,8 @@ function apiSubirItemsAViaje(payload) {
         cant,
         cant,
         0,
-        "",
-        "EN_CARGA",
+        obsItem,
+        estadoItemNuevo,
         1
       ]);
 
@@ -1411,18 +1711,20 @@ function apiBajarItemDeViaje(idViaje, idDet) {
         const fMont = _formatearFechaHora(rd[10]);
         const cantEnv = Number(rd[11]) || 0;
 
-        // Devolver a la Zona de Alistamiento Origen
-        _modificarStockZona(sheetZonas, {
-          zona: zonaOrigen,
-          codigo_art: codArt,
-          nombre_art: nomArt,
-          tipo_art: tipoArt,
-          id_ods: idOds,
-          fecha_montaje: fMont,
-          locacion_nombre: locNom,
-          nombre_evento: nomEv,
-          delta: cantEnv
-        });
+        // Devolver a la Zona de Alistamiento Origen (salvo si fue un EXTRA sin código de catálogo)
+        if (codArt !== "EXTRA" && codArt !== "S/C") {
+          _modificarStockZona(sheetZonas, {
+            zona: zonaOrigen,
+            codigo_art: codArt,
+            nombre_art: nomArt,
+            tipo_art: tipoArt,
+            id_ods: idOds,
+            fecha_montaje: fMont,
+            locacion_nombre: locNom,
+            nombre_evento: nomEv,
+            delta: cantEnv
+          });
+        }
 
         sheetDet.getRange(d + 1, 16).setValue("BAJADO_ANDEN");
         sheetDet.getRange(d + 1, 17).setValue(0);
@@ -1504,10 +1806,11 @@ function apiDarSalidaViaje(idViaje, usuarioNombre) {
       const fMont = _formatearFechaHora(rd[10]);
       const cantEnv = Number(rd[11]) || 0;
 
-      sheetDet.getRange(d + 1, 16).setValue("EN_RUTA");
+      const esEnvioEvento = infoViaje.tipo_viaje === "ENVIO_EVENTO";
+      sheetDet.getRange(d + 1, 16).setValue(esEnvioEvento ? "ENTREGADO_LOCACION" : "EN_RUTA");
 
-      // Si es ENVIO_EVENTO, al salir entra a LOCACIONES (en el hotel)
-      if (infoViaje.tipo_viaje === "ENVIO_EVENTO") {
+      // Si es ENVIO_EVENTO, al salir se descarga automáticamente en LOCACIONES (en el hotel con su ODS)
+      if (esEnvioEvento) {
         _modificarStockZona(sheetZonas, {
           zona: "LOCACIONES",
           codigo_art: codArt,
@@ -1521,9 +1824,9 @@ function apiDarSalidaViaje(idViaje, usuarioNombre) {
         });
       }
 
-      const textoHist = infoViaje.tipo_viaje === "ENVIO_EVENTO"
-        ? ("🚚 ODS " + idOds + " x " + cantEnv + " (" + nomArt + ") salió en ruta de " + zonaOrigen + " hacia hotel " + infoViaje.destino)
-        : ("🚚 ODS " + idOds + " x " + cantEnv + " (" + nomArt + ") salió en ruta de " + zonaOrigen + " hacia bodega " + zonaDestino);
+      const textoHist = esEnvioEvento
+        ? ("🏨 ODS " + idOds + " x " + cantEnv + " (" + nomArt + ") salió de " + zonaOrigen + " y quedó entregado en locación " + infoViaje.destino)
+        : ("🚚 ODS " + idOds + " x " + cantEnv + " (" + nomArt + ") salió en vehículo (bodega móvil) de " + zonaOrigen + " rumbo a " + zonaDestino);
 
       _registrarHistorial(sheetHist, {
         fecha_hora: ahora,
@@ -1549,15 +1852,24 @@ function apiDarSalidaViaje(idViaje, usuarioNombre) {
     }
 
     if (totalItemsCargados === 0) {
-      return { exito: false, error: "El camión está vacío. Súbele al menos 1 artículo antes de darle salida." };
+      return { exito: false, error: "El camión está vacío. Súbele al menos 1 artículo desde tu Zona de Alistamiento antes de darle salida." };
     }
 
-    sheetViajes.getRange(filaViaje, 10).setValue("EN_RUTA");
-    sheetViajes.getRange(filaViaje, 11).setValue(ahora);
+    // Si el viaje es A EVENTO / HOTEL, se descarga automáticamente en la locación al darle salida y el camión queda libre (COMPLETADO)
+    if (infoViaje.tipo_viaje === "ENVIO_EVENTO") {
+      sheetViajes.getRange(filaViaje, 10).setValue("COMPLETADO");
+      sheetViajes.getRange(filaViaje, 11).setValue(ahora);
+      sheetViajes.getRange(filaViaje, 12).setValue(ahora);
+      sheetViajes.getRange(filaViaje, 13).setValue("Entregado automáticamente en locación: " + infoViaje.destino);
+    } else {
+      sheetViajes.getRange(filaViaje, 10).setValue("EN_RUTA");
+      sheetViajes.getRange(filaViaje, 11).setValue(ahora);
+    }
 
     const estadoOp = _leerEstadoOperativoCompleto(ssOp);
     return {
       exito: true,
+      entregado_en_locacion: infoViaje.tipo_viaje === "ENVIO_EVENTO",
       zonas: estadoOp.zonas,
       viajes: estadoOp.viajes,
       historial: estadoOp.historial
@@ -1588,7 +1900,7 @@ function apiCrearViaje(payload) {
 }
 
 /**
- * 7. DAR ENTRADA / RECIBIR UN VIAJE EN RUTA (RECEPCIÓN EN BODEGA DESTINO O REGRESO DE EVENTO)
+ * 7. TOMAR ARTÍCULOS DE UN VEHÍCULO EN RUTA (BODEGA MÓVIL — DESCARGA PARCIAL O TOTAL HACIA ZONA DE ALISTAMIENTO PROPIA)
  */
 function apiCompletarViaje(payload) {
   const lock = LockService.getScriptLock();
@@ -1602,6 +1914,7 @@ function apiCompletarViaje(payload) {
     const sheetHist = ssOp.getSheetByName(EYS_CONFIG.HOJAS_OP.HISTORIAL.NOMBRE);
 
     const idViaje = String(payload.id_viaje || "").trim();
+    const zonaDestinoSeleccionada = String(payload.zona_destino || "").trim().toUpperCase();
     const obsGeneral = String(payload.observaciones_cierre || "").trim();
     const itemsRecibidos = payload.items_recibidos || {};
     const ahora = _ahoraStr();
@@ -1629,10 +1942,13 @@ function apiCompletarViaje(payload) {
       return { exito: false, error: "No se encontró el viaje " + idViaje };
     }
     if (infoViaje.estado === "COMPLETADO") {
-      return { exito: false, error: "Este viaje ya fue recibido y completado." };
+      return { exito: false, error: "Este vehículo ya fue descargado por completo." };
     }
 
     const dDet = sheetDet.getDataRange().getValues();
+    let piezasRestantesEnVehiculo = 0;
+    let piezasDescargadasEnEstaAccion = 0;
+
     for (let d = 1; d < dDet.length; d++) {
       const rd = dDet[d];
       if (String(rd[1] || "").trim() !== idViaje || rd[16] === 0 || String(rd[16]) === "0") continue;
@@ -1642,45 +1958,58 @@ function apiCompletarViaje(payload) {
       const nomArt = String(rd[3] || "").trim();
       const tipoArt = String(rd[4] || "MOBILIARIO").trim();
       const zonaOrigen = String(rd[5] || "").trim();
-      const zonaDestino = String(rd[6] || "").trim();
+      const zonaDestinoDefault = String(rd[6] || "").trim();
       const idOds = String(rd[7] || "").trim();
       const nomEv = String(rd[8] || "").trim();
       const locNom = String(rd[9] || "").trim();
       const fMont = _formatearFechaHora(rd[10]);
-      const cantEnv = Number(rd[11]) || 0;
+      const cantEnCamion = Number(rd[11]) || 0;
 
-      const ajuste = itemsRecibidos[idDet] || {};
-      const cantRec = ajuste.cant_recibida !== undefined ? Math.max(0, Number(ajuste.cant_recibida) || 0) : cantEnv;
-      const cantDif = Math.max(0, cantEnv - cantRec);
+      if (cantEnCamion <= 0) continue;
+
+      const ajuste = itemsRecibidos[idDet];
+      if (!ajuste) {
+        piezasRestantesEnVehiculo += cantEnCamion;
+        continue;
+      }
+
+      const cantTomada = ajuste.cant_recibida !== undefined
+        ? Math.min(cantEnCamion, Math.max(0, Number(ajuste.cant_recibida) || 0))
+        : 0;
       const novedadItem = String(ajuste.novedad || "").trim();
-      const estadoItem = cantDif > 0 || novedadItem ? "CON_NOVEDAD" : "COMPLETO";
+      const zonaFinalItem = String(ajuste.zona_destino || zonaDestinoSeleccionada || zonaDestinoDefault || infoViaje.destino).trim().toUpperCase();
+      const bodegaFinalItem = _obtenerBodegaBaseDeZona(zonaFinalItem);
 
-      sheetDet.getRange(d + 1, 13, 1, 4).setValues([[cantRec, cantDif, novedadItem, estadoItem]]);
+      if (cantTomada <= 0 && !novedadItem) {
+        piezasRestantesEnVehiculo += cantEnCamion;
+        continue;
+      }
 
-      if (infoViaje.tipo_viaje === "TRASLADO_BODEGA") {
-        if (cantRec > 0) {
-          _modificarStockZona(sheetZonas, {
-            zona: zonaDestino,
-            codigo_art: codArt,
-            nombre_art: nomArt,
-            tipo_art: tipoArt,
-            id_ods: idOds,
-            fecha_montaje: fMont,
-            locacion_nombre: locNom,
-            nombre_evento: nomEv,
-            delta: cantRec
-          });
-        }
+      piezasDescargadasEnEstaAccion += cantTomada;
+      const cantRestanteItem = Math.max(0, cantEnCamion - cantTomada);
 
-        const txtRec = "📥 ODS " + idOds + " x " + cantRec + " (" + nomArt + ") se dio entrada en " + zonaDestino + " proveniente de " + zonaOrigen + (novedadItem ? (" [Novedad: " + novedadItem + "]") : "");
+      if (cantTomada > 0) {
+        _modificarStockZona(sheetZonas, {
+          zona: zonaFinalItem,
+          codigo_art: codArt,
+          nombre_art: nomArt,
+          tipo_art: tipoArt,
+          id_ods: idOds,
+          fecha_montaje: fMont,
+          locacion_nombre: locNom,
+          nombre_evento: nomEv,
+          delta: cantTomada
+        });
+
+        const txtRec = "📥 ODS " + idOds + " x " + cantTomada + " (" + nomArt + ") se bajó del vehículo " + infoViaje.vehiculo + " (" + idViaje + ") hacia zona " + zonaFinalItem + (novedadItem ? (" [Novedad: " + novedadItem + "]") : "");
         _registrarHistorial(sheetHist, {
           fecha_hora: ahora,
           id_viaje: idViaje,
-          tipo_movimiento: "RECEPCION_TRASLADO",
+          tipo_movimiento: "DESCARGA_VEHICULO_A_ZONA",
           bodega_origen: infoViaje.bodega_origen,
           zona_origen: zonaOrigen,
-          bodega_destino: infoViaje.destino,
-          zona_destino: zonaDestino,
+          bodega_destino: bodegaFinalItem,
+          zona_destino: zonaFinalItem,
           id_ods: idOds,
           nombre_evento: nomEv,
           locacion_nombre: locNom,
@@ -1688,95 +2017,228 @@ function apiCompletarViaje(payload) {
           fecha_ods: fMont,
           codigo_art: codArt,
           nombre_art: nomArt,
-          cantidad: cantRec,
+          cantidad: cantTomada,
           vehiculo: infoViaje.vehiculo,
           chofer: infoViaje.chofer,
           novedad: novedadItem,
           resumen_texto: txtRec
         });
-      } else {
-        _modificarStockZona(sheetZonas, {
-          zona: "LOCACIONES",
-          codigo_art: codArt,
-          nombre_art: nomArt,
-          tipo_art: tipoArt,
-          id_ods: idOds,
-          fecha_montaje: fMont,
-          locacion_nombre: infoViaje.destino,
-          nombre_evento: nomEv,
-          delta: -cantEnv
-        });
-
-        if (cantRec > 0) {
-          _modificarStockZona(sheetZonas, {
-            zona: zonaOrigen,
-            codigo_art: codArt,
-            nombre_art: nomArt,
-            tipo_art: tipoArt,
-            id_ods: idOds,
-            fecha_montaje: fMont,
-            locacion_nombre: locNom,
-            nombre_evento: nomEv,
-            delta: cantRec
-          });
-        }
-
-        const txtReg = "📥 ODS " + idOds + " x " + cantRec + " (" + nomArt + ") regresó de hotel " + infoViaje.destino + " a " + zonaOrigen + (novedadItem ? (" [Novedad/Daño: " + novedadItem + "]") : "");
-        _registrarHistorial(sheetHist, {
-          fecha_hora: ahora,
-          id_viaje: idViaje,
-          tipo_movimiento: "REGRESO_DE_EVENTO",
-          bodega_origen: "LOCACIONES",
-          zona_origen: infoViaje.destino,
-          bodega_destino: infoViaje.bodega_origen,
-          zona_destino: zonaOrigen,
-          id_ods: idOds,
-          nombre_evento: nomEv,
-          locacion_nombre: infoViaje.destino,
-          vendedor_nombre: "",
-          fecha_ods: fMont,
-          codigo_art: codArt,
-          nombre_art: nomArt,
-          cantidad: cantRec,
-          vehiculo: infoViaje.vehiculo,
-          chofer: infoViaje.chofer,
-          novedad: novedadItem,
-          resumen_texto: txtReg
-        });
       }
 
-      if (cantDif > 0) {
+      if (novedadItem) {
         _registrarHistorial(sheetHist, {
           fecha_hora: ahora,
           id_viaje: idViaje,
           tipo_movimiento: "NOVEDAD_FALTANTE",
           bodega_origen: infoViaje.bodega_origen,
           zona_origen: zonaOrigen,
-          bodega_destino: infoViaje.destino,
-          zona_destino: zonaDestino,
+          bodega_destino: bodegaFinalItem,
+          zona_destino: zonaFinalItem,
           id_ods: idOds,
           nombre_evento: nomEv,
-          locacion_nombre: locNom || infoViaje.destino,
+          locacion_nombre: locNom,
           vendedor_nombre: "",
           fecha_ods: fMont,
           codigo_art: codArt,
           nombre_art: nomArt,
-          cantidad: cantDif,
+          cantidad: cantTomada,
           vehiculo: infoViaje.vehiculo,
           chofer: infoViaje.chofer,
-          novedad: novedadItem || "Faltante al recibir viaje",
-          resumen_texto: "⚠️ ODS " + idOds + ": Faltaron " + cantDif + " pza(s) de " + nomArt + " en viaje " + idViaje + (novedadItem ? (" (" + novedadItem + ")") : "")
+          novedad: novedadItem,
+          resumen_texto: "⚠️ ODS " + idOds + " (" + nomArt + ") en " + idViaje + ": " + novedadItem
         });
+      }
+
+      if (cantRestanteItem > 0) {
+        // Descarga parcial: el resto del artículo sigue arriba del vehículo (bodega móvil)
+        sheetDet.getRange(d + 1, 12).setValue(cantRestanteItem);
+        sheetDet.getRange(d + 1, 13).setValue(cantRestanteItem);
+        if (novedadItem) sheetDet.getRange(d + 1, 15).setValue(novedadItem);
+        piezasRestantesEnVehiculo += cantRestanteItem;
+      } else {
+        // Se bajó el total de este renglón
+        sheetDet.getRange(d + 1, 7).setValue(zonaFinalItem);
+        sheetDet.getRange(d + 1, 13).setValue(cantTomada);
+        sheetDet.getRange(d + 1, 15).setValue(novedadItem);
+        sheetDet.getRange(d + 1, 16).setValue("DESCARGADO");
+        sheetDet.getRange(d + 1, 17).setValue(0);
       }
     }
 
-    sheetViajes.getRange(filaViaje, 10).setValue("COMPLETADO");
-    sheetViajes.getRange(filaViaje, 12).setValue(ahora);
-    sheetViajes.getRange(filaViaje, 13).setValue(obsGeneral);
+    if (piezasDescargadasEnEstaAccion === 0) {
+      return { exito: false, error: "Indica al menos 1 pieza a bajar del vehículo hacia tu Zona de Alistamiento." };
+    }
+
+    if (piezasRestantesEnVehiculo === 0) {
+      sheetViajes.getRange(filaViaje, 10).setValue("COMPLETADO");
+      sheetViajes.getRange(filaViaje, 12).setValue(ahora);
+      if (obsGeneral) sheetViajes.getRange(filaViaje, 13).setValue(obsGeneral);
+    } else if (obsGeneral) {
+      sheetViajes.getRange(filaViaje, 13).setValue(obsGeneral);
+    }
 
     const estadoOp = _leerEstadoOperativoCompleto(ssOp);
     return {
       exito: true,
+      viaje_completado: piezasRestantesEnVehiculo === 0,
+      piezas_restantes: piezasRestantesEnVehiculo,
+      zonas: estadoOp.zonas,
+      viajes: estadoOp.viajes,
+      historial: estadoOp.historial
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * 7B. CREAR REPORTE DE VIAJE (RECIBIR DE LOCACIÓN / HOTELES HACIA MI ZONA DE ALISTAMIENTO)
+ *     Solo permite recibir artículos que estén actualmente en la zona LOCACIONES,
+ *     sin importar si el chofer los trajo de 1 hotel o de varios hoteles.
+ */
+function apiCrearReporteViajeLocacion(payload) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const ssOp = SpreadsheetApp.openById(EYS_CONFIG.IDS.SS_OPERACION);
+    _garantizarHojasOperacion(ssOp);
+    const sheetViajes = ssOp.getSheetByName(EYS_CONFIG.HOJAS_OP.VIAJES.NOMBRE);
+    const sheetDet = ssOp.getSheetByName(EYS_CONFIG.HOJAS_OP.VIAJES_DETALLE.NOMBRE);
+    const sheetZonas = ssOp.getSheetByName(EYS_CONFIG.HOJAS_OP.ZONAS.NOMBRE);
+    const sheetHist = ssOp.getSheetByName(EYS_CONFIG.HOJAS_OP.HISTORIAL.NOMBRE);
+
+    const vehiculo = String(payload.vehiculo || "").trim();
+    const chofer = String(payload.chofer || "").trim();
+    const zonaDestino = String(payload.zona_destino || "").trim().toUpperCase();
+    const bodegaDestino = _obtenerBodegaBaseDeZona(zonaDestino);
+    const observaciones = String(payload.observaciones || "").trim();
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    const ahora = _ahoraStr();
+
+    if (!vehiculo || !chofer || !zonaDestino) {
+      return { exito: false, error: "Selecciona Unidad/Vehículo, Chofer y tu Zona de Alistamiento destino." };
+    }
+    if (items.length === 0) {
+      return { exito: false, error: "Selecciona al menos un artículo de LOCACIONES que haya traído el chofer." };
+    }
+
+    const numViaje = sheetViajes.getLastRow();
+    const idViaje = "RV-" + String(numViaje).padStart(4, "0");
+
+    // Recolectar hoteles de los que trajo carga en este reporte
+    const hotelesSet = {};
+    items.forEach(function(it) {
+      if (it.locacion_nombre) hotelesSet[String(it.locacion_nombre).trim()] = true;
+    });
+    const origenHotelesTxt = Object.keys(hotelesSet).length > 0
+      ? ("LOCACIONES (" + Object.keys(hotelesSet).join(", ") + ")")
+      : "LOCACIONES";
+
+    sheetViajes.appendRow([
+      idViaje,
+      "REPORTE_LOCACION",
+      origenHotelesTxt,
+      zonaDestino,
+      "",
+      "Reporte de Recepción desde Locación",
+      ahora,
+      vehiculo,
+      chofer,
+      "COMPLETADO",
+      ahora,
+      ahora,
+      observaciones || ("Recibido en " + zonaDestino + " desde " + origenHotelesTxt),
+      1
+    ]);
+
+    items.forEach(function(it) {
+      const cantRec = Math.max(0, Number(it.cantidad) || 0);
+      if (!it.codigo_art || cantRec <= 0) return;
+
+      const codArt = String(it.codigo_art).trim();
+      const nomArt = String(it.nombre_art || "").trim();
+      const tipoArt = String(it.tipo_art || "MOBILIARIO").trim();
+      const idOds = String(it.id_ods || "").trim();
+      const nomEv = String(it.nombre_evento || "").trim();
+      const locNom = String(it.locacion_nombre || "").trim();
+      const fMont = _formatearFechaHora(it.fecha_montaje);
+      const novedadItem = String(it.novedad || "").trim();
+
+      // 1. Descontar de la zona LOCACIONES
+      _modificarStockZona(sheetZonas, {
+        zona: "LOCACIONES",
+        codigo_art: codArt,
+        nombre_art: nomArt,
+        tipo_art: tipoArt,
+        id_ods: idOds,
+        fecha_montaje: fMont,
+        locacion_nombre: locNom,
+        nombre_evento: nomEv,
+        delta: -cantRec
+      });
+
+      // 2. Ingresar a la Zona de Alistamiento propia del encargado que recibe
+      _modificarStockZona(sheetZonas, {
+        zona: zonaDestino,
+        codigo_art: codArt,
+        nombre_art: nomArt,
+        tipo_art: tipoArt,
+        id_ods: idOds,
+        fecha_montaje: fMont,
+        locacion_nombre: locNom,
+        nombre_evento: nomEv,
+        delta: cantRec
+      });
+
+      const idDet = idViaje + "-D" + new Date().getTime() + "-" + Math.floor(Math.random() * 900 + 100);
+      sheetDet.appendRow([
+        idDet,
+        idViaje,
+        codArt,
+        nomArt,
+        tipoArt,
+        "LOCACIONES (" + (locNom || "Hotel") + ")",
+        zonaDestino,
+        idOds,
+        nomEv,
+        locNom,
+        fMont,
+        cantRec,
+        cantRec,
+        0,
+        novedadItem,
+        novedadItem ? "CON_NOVEDAD" : "COMPLETO",
+        1
+      ]);
+
+      const txtHist = "📋 Reporte " + idViaje + ": ODS " + idOds + " x " + cantRec + " (" + nomArt + ") recibido de locación " + (locNom || "Hotel") + " hacia zona " + zonaDestino + " (Chofer: " + chofer + ")" + (novedadItem ? (" [Novedad: " + novedadItem + "]") : "");
+      _registrarHistorial(sheetHist, {
+        fecha_hora: ahora,
+        id_viaje: idViaje,
+        tipo_movimiento: "REPORTE_RECEPCION_LOCACION",
+        bodega_origen: "LOCACIONES",
+        zona_origen: locNom || "LOCACIONES",
+        bodega_destino: bodegaDestino,
+        zona_destino: zonaDestino,
+        id_ods: idOds,
+        nombre_evento: nomEv,
+        locacion_nombre: locNom,
+        vendedor_nombre: "",
+        fecha_ods: fMont,
+        codigo_art: codArt,
+        nombre_art: nomArt,
+        cantidad: cantRec,
+        vehiculo: vehiculo,
+        chofer: chofer,
+        novedad: novedadItem,
+        resumen_texto: txtHist
+      });
+    });
+
+    const estadoOp = _leerEstadoOperativoCompleto(ssOp);
+    return {
+      exito: true,
+      id_viaje: idViaje,
       zonas: estadoOp.zonas,
       viajes: estadoOp.viajes,
       historial: estadoOp.historial
