@@ -389,6 +389,50 @@
       background-color: rgba(0, 169, 224, 0.1);
     }
 
+    /* =====================================================================
+       CARRUSEL DESLIZABLE HORIZONTAL PARA HOJA DE TRASLADO (TABLET / CELULAR)
+       ===================================================================== */
+    .hoja-carousel-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .hoja-carousel-scroll {
+      overflow-x: auto;
+      overflow-y: visible;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+      padding-bottom: 185px;
+      margin-bottom: -175px;
+      border-radius: 10px;
+    }
+
+    .hoja-carousel-scroll::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .hoja-carousel-scroll::-webkit-scrollbar-track {
+      background: var(--input-bg);
+      border-radius: 999px;
+    }
+
+    .hoja-carousel-scroll::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+      border-radius: 999px;
+    }
+
+    .hoja-carousel-nav-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background-color: rgba(0, 169, 224, 0.08);
+      border: 1px dashed rgba(0, 169, 224, 0.35);
+    }
+
     /* Lienzo Térmico Niimbot B1 (50x30 mm -> 384x240 px) */
     .canvas-wrapper {
       background: #cbd5e1;
@@ -1147,9 +1191,25 @@
             </small>
           </div>
 
-          <!-- Tabla Virtual del Generador (Cambia columnas según 1. Traslado Bodegas vs 2. Operación / Evento) -->
-          <div class="table-responsive" style="overflow: visible;">
-            <table class="table table-bordered align-middle mb-0">
+          <!-- Barra deslizadora tipo carrusel para Tablet / Celular -->
+          <div class="hoja-carousel-nav-bar">
+            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-bold d-flex align-items-center gap-1" onclick="deslizarCarruselHoja('scroll-hoja-generador', -280)">
+              <i class="bi bi-chevron-left"></i>
+              <span>Izquierda</span>
+            </button>
+            <small class="text-primary fw-bold text-center">
+              <i class="bi bi-arrows-expand-vertical me-1"></i>Desliza la tabla hacia los lados o usa las flechas
+            </small>
+            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-bold d-flex align-items-center gap-1" onclick="deslizarCarruselHoja('scroll-hoja-generador', 280)">
+              <span>Derecha</span>
+              <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+
+          <!-- Tabla Virtual del Generador con deslizamiento horizontal tipo carrusel -->
+          <div class="hoja-carousel-wrapper">
+            <div class="table-responsive hoja-carousel-scroll" id="scroll-hoja-generador">
+              <table class="table table-bordered align-middle mb-0" style="min-width: 980px;">
               <thead class="table-light text-center small fw-bold text-uppercase" id="gen-hoja-thead">
                 <tr>
                   <th style="width: 155px;" id="gen-th-col1">FECHA EVENTO</th>
@@ -1222,6 +1282,7 @@
               </tbody>
               <tbody id="gen-hoja-tbody-renglones"></tbody>
             </table>
+            </div>
           </div>
 
           <!-- Vista previa del pie de firmas según el formato elegido -->
@@ -1790,9 +1851,25 @@
               </span>
             </div>
 
-            <!-- TABLA FORMATO HOJA DE TRASLADO / ENTREGA DE ARTÍCULOS A OP -->
-            <div class="table-responsive" style="overflow: visible;">
-              <table class="table table-bordered align-middle mb-0">
+            <!-- Barra deslizadora tipo carrusel para Tablet / Celular -->
+            <div class="hoja-carousel-nav-bar">
+              <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-bold d-flex align-items-center gap-1" onclick="deslizarCarruselHoja('scroll-hoja-viaje-modal', -280)">
+                <i class="bi bi-chevron-left"></i>
+                <span>Izquierda</span>
+              </button>
+              <small class="text-primary fw-bold text-center">
+                <i class="bi bi-arrows-expand-vertical me-1"></i>Desliza la tabla hacia los lados o usa las flechas
+              </small>
+              <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-bold d-flex align-items-center gap-1" onclick="deslizarCarruselHoja('scroll-hoja-viaje-modal', 280)">
+                <span>Derecha</span>
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </div>
+
+            <!-- TABLA FORMATO HOJA DE TRASLADO / ENTREGA DE ARTÍCULOS A OP CON DESLIZAMIENTO HORIZONTAL -->
+            <div class="hoja-carousel-wrapper">
+              <div class="table-responsive hoja-carousel-scroll" id="scroll-hoja-viaje-modal">
+                <table class="table table-bordered align-middle mb-0" style="min-width: 980px;">
                 <thead class="table-light text-center small fw-bold text-uppercase">
                   <tr>
                     <th style="width: 145px;" id="hoja-th-fecha">FECHA EVENTO</th>
@@ -1870,6 +1947,7 @@
                 <!-- RENGLONES YA ANOTADOS EN LA HOJA (ARRIBA DEL VEHÍCULO) -->
                 <tbody id="contenedor-manifiesto-arriba-camion"></tbody>
               </table>
+              </div>
             </div>
 
             <!-- PIE DE FIRMAS IDÉNTICO A LA HOJA FÍSICA (BODEGAS vs OPERACIÓN / EVENTO) -->
@@ -4917,6 +4995,13 @@
     // =========================================================================
     let MODO_HOJA_OPERACION = "BODEGA"; // 'BODEGA' | 'EVENTO'
     let RENGLONES_GENERADOR_HOJA = [];
+
+    function deslizarCarruselHoja(idContenedor, deltaX) {
+      const el = document.getElementById(idContenedor);
+      if (el) {
+        el.scrollBy({ left: deltaX, behavior: "smooth" });
+      }
+    }
 
     async function abrirGeneradorHojaOperacion() {
       const eleccion = await Swal.fire({
