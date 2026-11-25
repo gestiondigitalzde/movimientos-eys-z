@@ -383,10 +383,29 @@
       cursor: pointer;
       border-bottom: 1px solid var(--border-color);
       font-size: 0.84rem;
+      transition: background-color 0.12s ease;
     }
 
-    .suggest-item:hover {
-      background-color: rgba(0, 169, 224, 0.1);
+    .suggest-item:hover,
+    .suggest-item.suggest-item-active {
+      background-color: rgba(0, 169, 224, 0.16);
+    }
+
+    .suggest-item.suggest-item-active {
+      outline: 2px solid rgba(0, 169, 224, 0.55);
+      outline-offset: -2px;
+    }
+
+    .suggest-item .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      white-space: nowrap;
+      align-self: center;
+      height: fit-content;
+      width: auto;
+      line-height: 1.2;
     }
 
     /* =====================================================================
@@ -402,8 +421,8 @@
       overflow-y: visible;
       -webkit-overflow-scrolling: touch;
       scroll-behavior: smooth;
-      padding-bottom: 185px;
-      margin-bottom: -175px;
+      padding-bottom: 255px;
+      margin-bottom: -245px;
       border-radius: 10px;
     }
 
@@ -817,7 +836,7 @@
 
         <div id="contenedor-lista-ods" class="d-flex flex-column gap-2 pb-5"></div>
 
-        <button class="fab-btn" onclick="abrirModalCrearODS()" title="Crear Nueva ODS">
+        <button id="btn-fab-ods" class="fab-btn" onclick="abrirModalCrearODS()" title="Crear Nueva ODS">
           <i class="bi bi-plus-lg"></i>
         </button>
       </section>
@@ -908,7 +927,7 @@
 
           <!-- Botones derechos: Crear Reporte de Viaje (Recibir de Locación) + Historial + Consultar Movimiento -->
           <div class="d-flex align-items-center gap-2 flex-wrap">
-            <button type="button" class="btn btn-sm btn-success rounded-pill px-3 fw-bold shadow-sm" onclick="abrirModalReporteViajeLocacion()" title="Registrar lo que trajo un chofer desde 1 o varios hoteles hacia tu Zona de Alistamiento">
+            <button type="button" id="btn-top-reporte-viaje-loc" class="btn btn-sm btn-success rounded-pill px-3 fw-bold shadow-sm" onclick="abrirModalReporteViajeLocacion()" title="Registrar lo que trajo un chofer desde 1 o varios hoteles hacia tu Zona de Alistamiento">
               <i class="bi bi-clipboard2-check-fill me-1"></i>Crear Reporte de Viaje
             </button>
             <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold" id="btn-toggle-historial-viajes" onclick="cambiarFiltroEstadoViajes('HISTORIAL')">
@@ -931,7 +950,7 @@
         <div id="contenedor-lista-viajes" class="d-flex flex-column gap-3 pb-5"></div>
 
         <!-- Botón Flotante + para Crear Nuevo Viaje en Andén -->
-        <button class="fab-btn" onclick="abrirModalCrearCabeceraViaje()" title="Crear Nuevo Viaje en Andén">
+        <button id="btn-fab-viajes" class="fab-btn" onclick="abrirModalCrearCabeceraViaje()" title="Crear Nuevo Viaje en Andén">
           <i class="bi bi-plus-lg"></i>
         </button>
       </section>
@@ -1920,8 +1939,7 @@
                              id="hoja-input-cant"
                              class="form-control form-control-sm input-theme text-center fw-bold"
                              min="1"
-                             value="1"
-                             onkeydown="if(event.key==='Enter'){event.preventDefault(); agregarRenglonHojaTraslado();}">
+                             value="1">
                       <small class="text-muted d-block text-center" style="font-size: 0.68rem;" id="hoja-lbl-max-cant">Máx: -</small>
                     </td>
                     <td class="d-none hoja-col-op text-center text-muted small">☐</td>
@@ -1933,8 +1951,7 @@
                       <input type="text"
                              id="hoja-input-obs"
                              class="form-control form-control-sm input-theme"
-                             placeholder="Observación opcional..."
-                             onkeydown="if(event.key==='Enter'){event.preventDefault(); agregarRenglonHojaTraslado();}">
+                             placeholder="Observación opcional...">
                       <input type="hidden" id="hoja-input-id-reg-zona">
                     </td>
                     <td class="text-center">
@@ -2238,8 +2255,167 @@
       ods: [],
       zonas: [],
       viajes: [],
-      historial: []
+      historial: [],
+      permisos: []
     };
+
+    const TODAS_LAS_ZONAS_SISTEMA = [
+      "BONFIL MOBILIARIO",
+      "BONFIL MANUALIDADES",
+      "BONFIL TELAS",
+      "BONFIL ILUMINACIÓN",
+      "CEDIS",
+      "PUERTO"
+    ];
+
+    // =========================================================================
+    // MOTOR DE PERMISOS BASADO EN LA HOJA "PERMISOS" (usuario | bodega | zona)
+    // =========================================================================
+    function normalizarZonaPermisoTexto(rawZona) {
+      const s = String(rawZona || "")
+        .trim()
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      if (!s) return "";
+      if (s === "TODAS" || s === "TODOS" || s === "ADMIN" || s === "GENERAL") return "TODAS";
+      if (s.includes("MOBILIARIO")) return "BONFIL MOBILIARIO";
+      if (s.includes("MANUALIDAD")) return "BONFIL MANUALIDADES";
+      if (s.includes("TELA")) return "BONFIL TELAS";
+      if (s.includes("ILUMINAC")) return "BONFIL ILUMINACIÓN";
+      if (s.includes("CEDIS")) return "CEDIS";
+      if (s.includes("PUERTO")) return "PUERTO";
+      if (s === "BONFIL") return "BONFIL";
+      return String(rawZona || "").trim().toUpperCase();
+    }
+
+    function obtenerPerfilPermisosUsuarioActual() {
+      const email = String(STATE.usuario && STATE.usuario.email ? STATE.usuario.email : "").trim().toLowerCase();
+      if (!email) {
+        return { enPermisos: false, soloLectura: true, bodegas: [], zonas: [] };
+      }
+
+      const filasUsuario = (STATE.permisos || []).filter(p =>
+        String(p.usuario || "").trim().toLowerCase() === email
+      );
+
+      if (filasUsuario.length === 0) {
+        return { enPermisos: false, soloLectura: true, bodegas: [], zonas: [] };
+      }
+
+      const setBodegas = new Set();
+      const setZonas = new Set();
+
+      filasUsuario.forEach(p => {
+        const b = String(p.bodega || "").trim().toUpperCase();
+        const z = normalizarZonaPermisoTexto(p.zona);
+
+        if ((!b && !z) || b === "TODAS" || b === "TODOS" || b === "ADMIN" || b === "GENERAL" || z === "TODAS") {
+          setBodegas.add("BONFIL");
+          setBodegas.add("CEDIS");
+          setBodegas.add("PUERTO");
+          TODAS_LAS_ZONAS_SISTEMA.forEach(zs => setZonas.add(zs));
+          return;
+        }
+
+        if (b.startsWith("BONFIL")) {
+          setBodegas.add("BONFIL");
+          if (!z || z === "BONFIL" || z === "TODAS") {
+            setZonas.add("BONFIL MOBILIARIO");
+            setZonas.add("BONFIL MANUALIDADES");
+            setZonas.add("BONFIL TELAS");
+            setZonas.add("BONFIL ILUMINACIÓN");
+          } else {
+            setZonas.add(z);
+          }
+        } else if (b.includes("CEDIS") || z === "CEDIS") {
+          setBodegas.add("CEDIS");
+          setZonas.add("CEDIS");
+        } else if (b.includes("PUERTO") || z === "PUERTO") {
+          setBodegas.add("PUERTO");
+          setZonas.add("PUERTO");
+        }
+
+        if (z && z.startsWith("BONFIL ")) {
+          setBodegas.add("BONFIL");
+          setZonas.add(z);
+        }
+      });
+
+      return {
+        enPermisos: true,
+        soloLectura: false,
+        bodegas: Array.from(setBodegas),
+        zonas: Array.from(setZonas)
+      };
+    }
+
+    function usuarioPuedeCrearModificarODS() {
+      return obtenerPerfilPermisosUsuarioActual().enPermisos;
+    }
+
+    function usuarioPuedeModificarZona(nombreZona) {
+      const z = String(nombreZona || "").trim().toUpperCase();
+      if (!z || z === "LOCACIONES") return false;
+      const perf = obtenerPerfilPermisosUsuarioActual();
+      if (!perf.enPermisos) return false;
+      return perf.zonas.includes(z);
+    }
+
+    function usuarioPuedeOperarBodega(nombreBodega) {
+      const b = String(nombreBodega || "").trim().toUpperCase();
+      const bBase = b.startsWith("BONFIL") ? "BONFIL" : b;
+      const perf = obtenerPerfilPermisosUsuarioActual();
+      if (!perf.enPermisos) return false;
+      return perf.bodegas.includes(bBase);
+    }
+
+    function actualizarInsigniaRolPermisosUI() {
+      const u = STATE.usuario;
+      if (!u) return;
+      const perf = obtenerPerfilPermisosUsuarioActual();
+      const lblRol = document.getElementById("nav-user-rol");
+      if (lblRol) {
+        if (!perf.enPermisos) {
+          lblRol.innerHTML = `<span class="text-warning"><i class="bi bi-eye-fill me-1"></i>SOLO LECTURA</span>`;
+        } else {
+          const resumenZonas = perf.zonas.length === TODAS_LAS_ZONAS_SISTEMA.length
+            ? "ACCESO TOTAL"
+            : perf.zonas.join(" · ");
+          lblRol.textContent = resumenZonas;
+        }
+      }
+
+      // Si el usuario tiene permisos en una zona específica y la zona activa actual no es de las suyas, preseleccionar su primera zona permitida
+      if (perf.enPermisos && perf.zonas.length > 0) {
+        const selZona = document.getElementById("select-zona-activa");
+        if (selZona && !perf.zonas.includes(selZona.value)) {
+          selZona.value = perf.zonas[0];
+        }
+        const bodPrimera = perf.bodegas[0];
+        if (bodPrimera && !perf.bodegas.includes(STATE.bodegaGlobal)) {
+          STATE.bodegaGlobal = bodPrimera;
+          const lblBod = document.getElementById("lbl-bodega-global");
+          if (lblBod) lblBod.textContent = bodPrimera;
+        }
+      }
+
+      // Mostrar/ocultar botones globales de creación según permisos
+      const fabOds = document.getElementById("btn-fab-ods");
+      if (fabOds) fabOds.classList.toggle("d-none", !perf.enPermisos);
+
+      const fabViajes = document.getElementById("btn-fab-viajes");
+      if (fabViajes) fabViajes.classList.toggle("d-none", !perf.enPermisos);
+
+      const btnRepLoc = document.getElementById("btn-top-reporte-viaje-loc");
+      if (btnRepLoc) btnRepLoc.classList.toggle("d-none", !perf.enPermisos);
+
+      const zonaActiva = document.getElementById("select-zona-activa")?.value || "BONFIL MOBILIARIO";
+      const fabZona = document.getElementById("btn-fab-zona");
+      if (fabZona) {
+        fabZona.classList.toggle("d-none", zonaActiva === "LOCACIONES" || !usuarioPuedeModificarZona(zonaActiva));
+      }
+    }
 
     const ICO_MUEBLE = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><path d='M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3a4 4 0 0 0-4 4v5a1 1 0 0 0 1 1h1v2a1 1 0 0 0 2 0v-2h16v2a1 1 0 0 0 2 0v-2h1a1 1 0 0 0 1-1v-5a4 4 0 0 0-4-4zm-14-3h12v3h-1.1a3 3 0 0 0-5.8 0H8.9a3 3 0 0 0-5.8 0H6V6zm16 11H2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4z'/></svg>";
     const ICO_MAPA = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><path d='M12 1C7.6 1 4 4.6 4 9c0 5.8 8 14 8 14s8-8.2 8-14c0-4.4-3.6-8-8-8zm0 11.5c-1.9 0-3.5-1.6-3.5-3.5S10.1 5.5 12 5.5s3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z'/></svg>";
@@ -2269,10 +2445,272 @@
         }
       });
 
+      document.addEventListener("mouseover", function(e) {
+        const item = e.target.closest(".suggest-item");
+        if (!item) return;
+        const box = item.closest(".suggest-box");
+        if (!box) return;
+        box.querySelectorAll(".suggest-item.suggest-item-active").forEach(el => {
+          if (el !== item) el.classList.remove("suggest-item-active");
+        });
+      });
+
+      document.addEventListener("keydown", manejarTecladoGlobalSugerenciasYCampos, true);
+
       cargarCacheLocal();
       verificarSesionUsuario();
       sincronizarDatosServidor(false);
     });
+
+    // =========================================================================
+    // NAVEGACIÓN POR TECLADO EN LISTAS DESPLEGABLES (FLECHAS ARRIBA/ABAJO + ENTER PARA SELECCIONAR Y AVANZAR)
+    // =========================================================================
+    function obtenerSuggestBoxDeInput(el) {
+      if (!el) return null;
+      const contRel = el.closest(".position-relative") || el.parentElement;
+      if (!contRel) return null;
+      return contRel.querySelector(".suggest-box");
+    }
+
+    function enfocarElementoPorId(idTarget, seleccionarTexto) {
+      const target = document.getElementById(idTarget);
+      if (!target) return false;
+      setTimeout(() => {
+        target.focus();
+        if (seleccionarTexto && typeof target.select === "function") {
+          target.select();
+        }
+      }, 25);
+      return true;
+    }
+
+    function manejarTecladoGlobalSugerenciasYCampos(e) {
+      const el = e.target;
+      if (!el || (el.tagName !== "INPUT" && el.tagName !== "SELECT")) return;
+      if (el.id === "login-email" || el.id === "login-pin") return;
+
+      const box = obtenerSuggestBoxDeInput(el);
+      const boxVisible = !!(box && !box.classList.contains("d-none"));
+
+      // 1. Flecha Abajo / Flecha Arriba para recorrer las opciones desplegadas
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        if (!box && el.type === "number") return;
+        if (box) {
+          if (!boxVisible && e.key === "ArrowDown") {
+            if (typeof el.onfocus === "function") el.onfocus(e);
+            else if (typeof el.oninput === "function") el.oninput(e);
+          }
+          const items = (!box.classList.contains("d-none")) ? Array.from(box.querySelectorAll(".suggest-item")) : [];
+          if (items.length > 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            let idx = items.findIndex(it => it.classList.contains("suggest-item-active"));
+            items.forEach(it => it.classList.remove("suggest-item-active"));
+            if (e.key === "ArrowDown") {
+              idx = (idx + 1) % items.length;
+            } else {
+              idx = (idx <= 0) ? (items.length - 1) : (idx - 1);
+            }
+            items[idx].classList.add("suggest-item-active");
+            items[idx].scrollIntoView({ block: "nearest" });
+            return;
+          }
+        }
+      }
+
+      // 2. Escape para cerrar lista desplegable
+      if (e.key === "Escape" && boxVisible) {
+        e.preventDefault();
+        e.stopPropagation();
+        box.classList.add("d-none");
+        return;
+      }
+
+      // 3. Enter / Intro: seleccionar opción resaltada (si existe) y continuar al siguiente campo
+      if (e.key === "Enter") {
+        const items = boxVisible ? Array.from(box.querySelectorAll(".suggest-item")) : [];
+        const activeItem = boxVisible ? box.querySelector(".suggest-item.suggest-item-active") : null;
+        const itemPorSeleccionar = activeItem || (items.length === 1 ? items[0] : null);
+
+        if (itemPorSeleccionar) {
+          e.preventDefault();
+          e.stopPropagation();
+          itemPorSeleccionar.click();
+          if (box) box.classList.add("d-none");
+          avanzarAlSiguienteCampo(el, true);
+          return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+        if (box) box.classList.add("d-none");
+        avanzarAlSiguienteCampo(el, false);
+      }
+    }
+
+    function avanzarAlSiguienteCampo(el, desdeSeleccion) {
+      const id = el.id || "";
+
+      // --- A) MÓDULO 4: HOJA DE TRASLADO / OPERACIÓN ---
+      if (id === "gen-hoja-fecha") {
+        return enfocarElementoPorId("gen-hoja-chofer", true);
+      }
+      if (id === "gen-hoja-chofer") {
+        if (MODO_HOJA_OPERACION === "EVENTO") return enfocarElementoPorId("gen-hoja-encargado", true);
+        return enfocarElementoPorId("gen-hoja-destino", false);
+      }
+      if (id === "gen-hoja-encargado") {
+        return enfocarElementoPorId("gen-hoja-ods-evento", true);
+      }
+      if (id === "gen-hoja-ods-evento") {
+        const lug = document.getElementById("gen-hoja-lugar-input")?.value.trim();
+        if (!lug) return enfocarElementoPorId("gen-hoja-lugar-input", true);
+        return enfocarElementoPorId("gen-hoja-input-codigo", true);
+      }
+      if (id === "gen-hoja-lugar-input") {
+        return enfocarElementoPorId("gen-hoja-input-codigo", true);
+      }
+      if (id === "gen-hoja-area") {
+        return enfocarElementoPorId(MODO_HOJA_OPERACION === "EVENTO" ? "gen-hoja-ods-evento" : "gen-hoja-destino", false);
+      }
+      if (id === "gen-hoja-destino" || id === "gen-hoja-vehiculo" || id === "gen-hoja-input-fecha-ev") {
+        return enfocarElementoPorId(MODO_HOJA_OPERACION === "EVENTO" ? "gen-hoja-input-codigo" : "gen-hoja-input-ods", true);
+      }
+      if (id === "gen-hoja-input-ods") {
+        return enfocarElementoPorId("gen-hoja-input-codigo", true);
+      }
+      if (id === "gen-hoja-input-codigo") {
+        if (desdeSeleccion) return enfocarElementoPorId("gen-hoja-input-cant", true);
+        const codLower = el.value.trim().toLowerCase();
+        const area = (document.getElementById("gen-hoja-area")?.value || "").toUpperCase();
+        if (codLower) {
+          const mZona = (STATE.zonas || []).find(z =>
+            String(z.zona || "").toUpperCase() === area &&
+            Number(z.cantidad) > 0 &&
+            String(z.codigo_art || "").trim().toLowerCase() === codLower
+          );
+          if (mZona) {
+            seleccionarItemEnGeneradorHoja(mZona.id_reg);
+            return enfocarElementoPorId("gen-hoja-input-cant", true);
+          }
+          const mCat = (STATE.catalogos.articulos || []).find(a =>
+            String(a.codigo || "").trim().toLowerCase() === codLower
+          );
+          if (mCat) {
+            seleccionarArticuloCatalogoEnGeneradorHoja(mCat.codigo, mCat.nombre);
+            return enfocarElementoPorId("gen-hoja-input-cant", true);
+          }
+        }
+        const desVal = document.getElementById("gen-hoja-input-descripcion")?.value.trim();
+        if (!desVal) return enfocarElementoPorId("gen-hoja-input-descripcion", true);
+        return enfocarElementoPorId("gen-hoja-input-cant", true);
+      }
+      if (id === "gen-hoja-input-descripcion") {
+        return enfocarElementoPorId("gen-hoja-input-cant", true);
+      }
+      if (id === "gen-hoja-input-cant") {
+        anotarRenglonEnGeneradorHoja();
+        return enfocarElementoPorId("gen-hoja-input-codigo", true);
+      }
+      if (id === "gen-hoja-input-prep") return enfocarElementoPorId("gen-hoja-input-premon", true);
+      if (id === "gen-hoja-input-premon") return enfocarElementoPorId("gen-hoja-input-mon", true);
+      if (id === "gen-hoja-input-mon") return enfocarElementoPorId("gen-hoja-input-des", true);
+      if (id === "gen-hoja-input-des") return enfocarElementoPorId("gen-hoja-input-dev", true);
+      if (id === "gen-hoja-input-dev") return enfocarElementoPorId("gen-hoja-input-obs", true);
+      if (id === "gen-hoja-input-obs") {
+        anotarRenglonEnGeneradorHoja();
+        return enfocarElementoPorId("gen-hoja-input-codigo", true);
+      }
+
+      // --- B) MÓDULO 3: HOJA DE TRASLADO VIRTUAL (SUBIR AL CAMIÓN) ---
+      if (id === "hoja-input-fecha-evento") {
+        const tdOds = document.getElementById("hoja-td-ods");
+        const odsVisible = tdOds && !tdOds.classList.contains("d-none");
+        return enfocarElementoPorId(odsVisible ? "hoja-input-ods" : "hoja-input-codigo", true);
+      }
+      if (id === "hoja-input-ods") {
+        return enfocarElementoPorId("hoja-input-codigo", true);
+      }
+      if (id === "hoja-input-codigo") {
+        if (desdeSeleccion) return enfocarElementoPorId("hoja-input-cant", true);
+        const codLower = el.value.trim().toLowerCase();
+        if (codLower) {
+          const disp = obtenerItemsDisponiblesEnAreaHoja();
+          const mZona = disp.find(x => String(x.codigo_art || "").trim().toLowerCase() === codLower);
+          if (mZona) {
+            seleccionarItemZonaParaHojaTraslado(mZona.id_reg);
+            return enfocarElementoPorId("hoja-input-cant", true);
+          }
+        }
+        const desVal = document.getElementById("hoja-input-descripcion")?.value.trim();
+        if (!desVal) return enfocarElementoPorId("hoja-input-descripcion", true);
+        return enfocarElementoPorId("hoja-input-cant", true);
+      }
+      if (id === "hoja-input-descripcion") {
+        return enfocarElementoPorId("hoja-input-cant", true);
+      }
+      if (id === "hoja-input-cant" || id === "hoja-input-obs") {
+        agregarRenglonHojaTraslado();
+        return enfocarElementoPorId("hoja-input-codigo", true);
+      }
+
+      // --- C) MÓDULO 2: INGRESAR ARTÍCULOS A ZONA DE ALISTAMIENTO ---
+      if (id === "zona-add-codigo") {
+        const nomVal = document.getElementById("zona-add-nombre")?.value.trim();
+        if (desdeSeleccion || nomVal) return enfocarElementoPorId("zona-add-cant", true);
+        return enfocarElementoPorId("zona-add-nombre", true);
+      }
+      if (id === "zona-add-nombre") {
+        return enfocarElementoPorId("zona-add-cant", true);
+      }
+      if (id === "zona-add-cant") {
+        const odsVal = document.getElementById("zona-add-ods")?.value.trim();
+        if (!odsVal) return enfocarElementoPorId("zona-add-ods", true);
+        const ok = anadirRenglonColaZona();
+        if (ok) return enfocarElementoPorId("zona-add-codigo", true);
+        return false;
+      }
+      if (id === "zona-add-ods") {
+        const codVal = document.getElementById("zona-add-codigo")?.value.trim();
+        const nomVal = document.getElementById("zona-add-nombre")?.value.trim();
+        if (codVal || nomVal) {
+          const ok = anadirRenglonColaZona();
+          if (ok) return enfocarElementoPorId("zona-add-codigo", true);
+        }
+        return enfocarElementoPorId("zona-add-codigo", true);
+      }
+
+      // --- D) MÓDULO 1: CREAR / EDITAR ODS ---
+      if (id === "ods-form-id") return enfocarElementoPorId("ods-form-evento", true);
+      if (id === "ods-form-evento") return enfocarElementoPorId("ods-form-vendedor", true);
+      if (id === "ods-form-vendedor") return enfocarElementoPorId("ods-form-locacion", true);
+      if (id === "ods-form-locacion") return enfocarElementoPorId("ods-form-fecha-dia", false);
+      if (id === "ods-form-fecha-dia") return enfocarElementoPorId("ods-form-fecha-hora", true);
+      if (id === "ods-form-fecha-hora") {
+        guardarODSFormulario();
+        return true;
+      }
+
+      // --- E) MODAL NUEVO VIAJE ---
+      if (id === "viaje-ods-general") return enfocarElementoPorId("viaje-select-vehiculo", false);
+      if (id === "viaje-select-vehiculo") return enfocarElementoPorId("viaje-select-chofer", true);
+      if (id === "viaje-select-chofer") return enfocarElementoPorId("btn-guardar-viaje", false);
+
+      // --- F) ETIQUETAS ---
+      if (id === "etq-input-ods") {
+        const inpLoc = document.getElementById("etq-input-locacion");
+        if (inpLoc && !inpLoc.readOnly) return enfocarElementoPorId("etq-input-locacion", true);
+        return enfocarElementoPorId("etq-input-codigo", true);
+      }
+      if (id === "etq-input-locacion") return enfocarElementoPorId("etq-input-fecha-dia", false);
+      if (id === "etq-input-fecha-dia") return enfocarElementoPorId("etq-input-fecha-hora", true);
+      if (id === "etq-input-fecha-hora") return enfocarElementoPorId("etq-input-codigo", true);
+      if (id === "etq-input-codigo") {
+        const inpNom = document.getElementById("etq-input-nombre");
+        if (inpNom && !inpNom.readOnly && !inpNom.value.trim()) return enfocarElementoPorId("etq-input-nombre", true);
+        return true;
+      }
+    }
 
     function verificarSesionUsuario() {
       try {
@@ -2296,7 +2734,9 @@
       if (u.foto) {
         document.getElementById("nav-user-foto").src = u.foto;
       }
+      actualizarInsigniaRolPermisosUI();
       actualizarContadoresMenu();
+      refrescarVistaActual();
     }
 
     function alternarVerPinLogin() {
@@ -2565,7 +3005,8 @@
           ods: STATE.ods,
           zonas: STATE.zonas,
           viajes: STATE.viajes,
-          historial: STATE.historial
+          historial: STATE.historial,
+          permisos: STATE.permisos
         }));
       } catch (e) {}
     }
@@ -2580,7 +3021,9 @@
         if (parsed.zonas) STATE.zonas = parsed.zonas;
         if (parsed.viajes) STATE.viajes = parsed.viajes;
         if (parsed.historial) STATE.historial = parsed.historial;
+        if (parsed.permisos) STATE.permisos = parsed.permisos;
         poblarSelectoresCatalogos();
+        actualizarInsigniaRolPermisosUI();
         actualizarContadoresMenu();
       } catch (e) {}
     }
@@ -2616,8 +3059,10 @@
           STATE.zonas = data.zonas || [];
           STATE.viajes = data.viajes || [];
           STATE.historial = data.historial || [];
+          STATE.permisos = data.permisos || [];
           guardarCacheLocal();
           poblarSelectoresCatalogos();
+          actualizarInsigniaRolPermisosUI();
           actualizarContadoresMenu();
           refrescarVistaActual();
           if (mostrarToast) {
@@ -3153,6 +3598,7 @@
       });
 
       cont.innerHTML = gruposPorMes.map(grupo => {
+        const puedeEditarODS = usuarioPuedeCrearModificarODS();
         const tarjetasHtml = grupo.items.map(o => {
           const est = String(o.estado || "ACTIVA").toUpperCase();
           const badgeEstado = est === "COMPLETADA"
@@ -3162,9 +3608,11 @@
           return `
             <div class="bg-card rounded-4 border border-theme p-3 shadow-sm d-flex align-items-center justify-content-between flex-wrap gap-3">
               <div class="d-flex align-items-center gap-3 flex-grow-1">
-                <button type="button" class="btn btn-sm btn-outline-primary rounded-circle flex-shrink-0" style="width:40px;height:40px;" onclick="abrirModalEditarODS('${o.id_ods}')" title="Editar ODS">
-                  <i class="bi bi-pencil-fill"></i>
-                </button>
+                ${puedeEditarODS ? `
+                  <button type="button" class="btn btn-sm btn-outline-primary rounded-circle flex-shrink-0" style="width:40px;height:40px;" onclick="abrirModalEditarODS('${o.id_ods}')" title="Editar ODS">
+                    <i class="bi bi-pencil-fill"></i>
+                  </button>
+                ` : ''}
                 <div class="flex-grow-1">
                   <!-- Resaltado principal: Número de ODS + Fecha de Montaje (24h) + Nombre del Evento -->
                   <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
@@ -3184,7 +3632,7 @@
                 </div>
               </div>
               <div class="d-flex align-items-center gap-2 ms-auto">
-                ${est === "ACTIVA" ? `
+                ${puedeEditarODS ? (est === "ACTIVA" ? `
                   <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold" onclick="cambiarEstadoODS('${o.id_ods}', 'COMPLETADA')">
                     <i class="bi bi-check-circle-fill me-1"></i>Completar
                   </button>
@@ -3195,7 +3643,7 @@
                   <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold" onclick="cambiarEstadoODS('${o.id_ods}', 'ACTIVA')">
                     <i class="bi bi-arrow-counterclockwise me-1"></i>Reactivar
                   </button>
-                `}
+                `) : '<span class="badge bg-secondary bg-opacity-10 text-muted border"><i class="bi bi-eye me-1"></i>Solo lectura</span>'}
               </div>
             </div>
           `;
@@ -3226,6 +3674,9 @@
     }
 
     function abrirModalCrearODS() {
+      if (!usuarioPuedeCrearModificarODS()) {
+        return Swal.fire("Solo lectura", "Tu usuario no está en la hoja PERMISOS para crear o modificar ODS.", "info");
+      }
       document.getElementById("titulo-modal-ods").innerHTML = '<i class="bi bi-calendar-plus text-primary me-2"></i>Crear ODS';
       document.getElementById("ods-form-id-original").value = "";
       document.getElementById("ods-form-id").value = "";
@@ -3240,6 +3691,9 @@
     }
 
     function abrirModalEditarODS(idOds) {
+      if (!usuarioPuedeCrearModificarODS()) {
+        return Swal.fire("Solo lectura", "Tu usuario no está en la hoja PERMISOS para editar ODS.", "info");
+      }
       const o = (STATE.ods || []).find(x => String(x.id_ods) === String(idOds));
       if (!o) return;
       document.getElementById("titulo-modal-ods").innerHTML = '<i class="bi bi-pencil-square text-primary me-2"></i>Modificar ODS #' + o.id_ods;
@@ -3352,7 +3806,7 @@
     function cambiarZonaActiva() {
       const zona = document.getElementById("select-zona-activa").value;
       const btnFab = document.getElementById("btn-fab-zona");
-      if (btnFab) btnFab.classList.toggle("d-none", zona === "LOCACIONES");
+      if (btnFab) btnFab.classList.toggle("d-none", zona === "LOCACIONES" || !usuarioPuedeModificarZona(zona));
       renderizarZonaActiva();
     }
 
@@ -3494,6 +3948,10 @@
         return;
       }
 
+      const puedeModificarEstaZona = usuarioPuedeModificarZona(zona);
+      const btnFab = document.getElementById("btn-fab-zona");
+      if (btnFab) btnFab.classList.toggle("d-none", zona === "LOCACIONES" || !puedeModificarEstaZona);
+
       // Tarjetas de Zona de Alistamiento:
       // 1º Arriba: Código
       // 2º Abajo: Nombre
@@ -3531,12 +3989,14 @@
               <span class="badge bg-success bg-opacity-10 text-success border border-success px-3 py-2 rounded-pill fs-6 fw-bold">
                 ${it.cantidad} pzas
               </span>
-              <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-2 fw-bold shadow-xs" onclick="abrirModalEditarItemZona('${it.id_reg}')" title="Editar ODS, cantidad o artículo si hubo un error">
-                <i class="bi bi-pencil-square me-1"></i>Editar
-              </button>
-              <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-2 fw-bold shadow-xs" onclick="abrirModalRegresarAlmacen('${it.id_reg}')" title="Quitar de la zona de alistamiento (parcial o total) y regresar a Almacén">
-                <i class="bi bi-arrow-counterclockwise me-1"></i>Regresar a Almacén
-              </button>
+              ${puedeModificarEstaZona ? `
+                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-2 fw-bold shadow-xs" onclick="abrirModalEditarItemZona('${it.id_reg}')" title="Editar ODS, cantidad o artículo si hubo un error">
+                  <i class="bi bi-pencil-square me-1"></i>Editar
+                </button>
+                <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-2 fw-bold shadow-xs" onclick="abrirModalRegresarAlmacen('${it.id_reg}')" title="Quitar de la zona de alistamiento (parcial o total) y regresar a Almacén">
+                  <i class="bi bi-arrow-counterclockwise me-1"></i>Regresar a Almacén
+                </button>
+              ` : ''}
               <button type="button" class="btn btn-warning btn-sm rounded-pill px-3 py-2 fw-bold shadow-sm" onclick="imprimirEtiquetaDirectaDesdeZona('${it.id_ods}', '${it.codigo_art}', '${(it.nombre_art || '').replace(/'/g, "\\'")}', '${locacionFinal.replace(/'/g, "\\'")}', '${fechaFinal}')">
                 <i class="bi bi-tag-fill me-1"></i>Etiqueta
               </button>
@@ -3724,15 +4184,15 @@
       const cant = Number(document.getElementById("zona-add-cant").value) || 0;
       const idOds = document.getElementById("zona-add-ods").value.trim();
 
-      if (!codigo || !nombre || cant <= 0 || !idOds) {
-        Swal.fire("Faltan datos", "Selecciona un Artículo de la base de datos (Código y Nombre), la Cantidad y la ODS.", "warning");
+      if ((!codigo && !nombre) || cant <= 0 || !idOds) {
+        Swal.fire("Faltan datos", "Selecciona un Artículo de la base de datos (Código o Nombre), la Cantidad y la ODS.", "warning");
         return false;
       }
 
       // Validar que el artículo exista obligatoriamente en la base de datos (sin importar de qué tipo sea, se puede meter a cualquier zona)
       const artCat = (STATE.catalogos.articulos || []).find(a =>
-        String(a.codigo || "").trim().toLowerCase() === codigo.toLowerCase() ||
-        String(a.nombre || "").trim().toLowerCase() === nombre.toLowerCase()
+        (codigo && String(a.codigo || "").trim().toLowerCase() === codigo.toLowerCase()) ||
+        (nombre && String(a.nombre || "").trim().toLowerCase() === nombre.toLowerCase())
       );
       if (!artCat) {
         Swal.fire(
@@ -3760,6 +4220,9 @@
       document.getElementById("zona-add-codigo").value = "";
       document.getElementById("zona-add-nombre").value = "";
       document.getElementById("zona-add-cant").value = "1";
+      document.getElementById("zona-suggest-codigo")?.classList.add("d-none");
+      document.getElementById("zona-suggest-nombre")?.classList.add("d-none");
+      document.getElementById("zona-suggest-ods")?.classList.add("d-none");
       renderizarColaZonaManual();
       return true;
     }
@@ -3927,36 +4390,48 @@
               </div>
             `).join("");
 
+        const perf = obtenerPerfilPermisosUsuarioActual();
+        const puedeOperarOrigen = usuarioPuedeOperarBodega(v.bodega_origen);
+        const tieneAlgunaZona = perf.enPermisos && perf.zonas.length > 0;
+
         let botonesAccion = "";
         if (est === "EN_CARGA") {
           botonesAccion = `
-            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold shadow-xs" onclick="abrirModalGestionCargaViaje('${v.id_viaje}')">
-              <i class="bi bi-file-earmark-spreadsheet me-1"></i>Llenar Hoja de Traslado (${totalPzas} pzas)
-            </button>
+            ${puedeOperarOrigen ? `
+              <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold shadow-xs" onclick="abrirModalGestionCargaViaje('${v.id_viaje}')">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i>Llenar Hoja de Traslado (${totalPzas} pzas)
+              </button>
+            ` : ''}
             <button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3 fw-bold shadow-xs" onclick="imprimirHojaDeTrasladoActual('${v.id_viaje}')" title="Imprimir formato de Hoja de Traslado">
               <i class="bi bi-printer-fill me-1"></i>Imprimir
             </button>
-            <button type="button" class="btn btn-sm btn-success rounded-pill px-3 fw-bold shadow-xs" onclick="darSalidaRapidaDesdeTarjeta('${v.id_viaje}')">
-              <i class="bi bi-send-check-fill me-1"></i>${esEvento ? 'Dar Salida (Entregar en Hotel)' : 'Dar Salida'}
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="cancelarViajeEnCurso('${v.id_viaje}')">
-              <i class="bi bi-x-circle me-1"></i>Cancelar
-            </button>
+            ${puedeOperarOrigen ? `
+              <button type="button" class="btn btn-sm btn-success rounded-pill px-3 fw-bold shadow-xs" onclick="darSalidaRapidaDesdeTarjeta('${v.id_viaje}')">
+                <i class="bi bi-send-check-fill me-1"></i>${esEvento ? 'Dar Salida (Entregar en Hotel)' : 'Dar Salida'}
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="cancelarViajeEnCurso('${v.id_viaje}')">
+                <i class="bi bi-x-circle me-1"></i>Cancelar
+              </button>
+            ` : ''}
           `;
         } else if (est === "EN_RUTA" || est === "EN_CURSO") {
           botonesAccion = `
-            <button type="button" class="btn btn-sm btn-success rounded-pill px-3 fw-bold shadow-xs" onclick="abrirModalCompletarViaje('${v.id_viaje}')">
-              <i class="bi bi-box-arrow-in-down me-1"></i>Tomar Carga para Mi Zona
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold shadow-xs" onclick="abrirModalGestionCargaViaje('${v.id_viaje}')" title="Llenar/Subir más artículos desde tu Zona de Alistamiento">
-              <i class="bi bi-file-earmark-spreadsheet me-1"></i>Hoja de Traslado
-            </button>
+            ${tieneAlgunaZona ? `
+              <button type="button" class="btn btn-sm btn-success rounded-pill px-3 fw-bold shadow-xs" onclick="abrirModalCompletarViaje('${v.id_viaje}')">
+                <i class="bi bi-box-arrow-in-down me-1"></i>Tomar Carga para Mi Zona
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold shadow-xs" onclick="abrirModalGestionCargaViaje('${v.id_viaje}')" title="Llenar/Subir más artículos desde tu Zona de Alistamiento">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i>Hoja de Traslado
+              </button>
+            ` : ''}
             <button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3 fw-bold shadow-xs" onclick="imprimirHojaDeTrasladoActual('${v.id_viaje}')" title="Imprimir formato de Hoja de Traslado">
               <i class="bi bi-printer-fill me-1"></i>Imprimir
             </button>
-            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="cancelarViajeEnCurso('${v.id_viaje}')">
-              <i class="bi bi-x-circle me-1"></i>Cancelar
-            </button>
+            ${puedeOperarOrigen ? `
+              <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="cancelarViajeEnCurso('${v.id_viaje}')">
+                <i class="bi bi-x-circle me-1"></i>Cancelar
+              </button>
+            ` : ''}
           `;
         } else {
           botonesAccion = `
@@ -3994,7 +4469,18 @@
     }
 
     function abrirModalCrearCabeceraViaje() {
-      document.getElementById("viaje-select-origen").value = STATE.bodegaGlobal || "BONFIL";
+      const perf = obtenerPerfilPermisosUsuarioActual();
+      if (!perf.enPermisos || perf.bodegas.length === 0) {
+        return Swal.fire("Solo lectura", "Tu usuario no está en la hoja PERMISOS para crear viajes.", "info");
+      }
+
+      const selOrigen = document.getElementById("viaje-select-origen");
+      if (selOrigen) {
+        const bodegasPermitidas = ["BONFIL", "CEDIS", "PUERTO"].filter(b => perf.bodegas.includes(b));
+        selOrigen.innerHTML = bodegasPermitidas.map(b => `<option value="${b}">${b}</option>`).join("");
+        selOrigen.value = bodegasPermitidas.includes(STATE.bodegaGlobal) ? STATE.bodegaGlobal : bodegasPermitidas[0];
+      }
+
       document.getElementById("viaje-ods-general").value = "";
       document.getElementById("viaje-fecha-ods-general").value = "";
       document.getElementById("viaje-evento-general").value = "";
@@ -4191,6 +4677,11 @@
     }
 
     function abrirModalGestionCargaViaje(idViaje) {
+      const perf = obtenerPerfilPermisosUsuarioActual();
+      if (!perf.enPermisos || perf.zonas.length === 0) {
+        return Swal.fire("Solo lectura", "Tu usuario no está en la hoja PERMISOS para subir carga a un vehículo.", "info");
+      }
+
       STATE.idViajeEnGestion = idViaje;
       const v = (STATE.viajes || []).find(x => String(x.id_viaje) === String(idViaje));
       const selZonaOrig = document.getElementById("viaje-add-zona-origen");
@@ -4217,10 +4708,15 @@
             zonasOpciones = [v.bodega_origen];
           }
         }
-        selZonaOrig.innerHTML = zonasOpciones.map(z => `<option value="${z}">${z}</option>`).join("");
+        // Filtrar únicamente las zonas que el usuario tiene asignadas en PERMISOS
+        const zonasFiltradasPorPermiso = zonasOpciones.filter(z => perf.zonas.includes(z));
+        if (zonasFiltradasPorPermiso.length === 0) {
+          return Swal.fire("Sin permiso en esta bodega", `Este viaje sale de ${v.bodega_origen} y tus permisos están asignados a: ${perf.zonas.join(", ")}.`, "warning");
+        }
+        selZonaOrig.innerHTML = zonasFiltradasPorPermiso.map(z => `<option value="${z}">${z}</option>`).join("");
 
         // Seleccionar automáticamente el ÁREA según la Zona de Alistamiento activa de la persona
-        if (zonaActivaEnModulo2 && zonaActivaEnModulo2 !== "LOCACIONES" && zonasOpciones.includes(zonaActivaEnModulo2)) {
+        if (zonaActivaEnModulo2 && zonaActivaEnModulo2 !== "LOCACIONES" && zonasFiltradasPorPermiso.includes(zonaActivaEnModulo2)) {
           selZonaOrig.value = zonaActivaEnModulo2;
         }
       }
@@ -4315,14 +4811,14 @@
         const hotelEv = z.locacion_nombre || odsInfo.locacion_nombre || "";
         return `
           <div class="suggest-item" onclick="seleccionarItemZonaParaHojaTraslado('${z.id_reg}')">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
+            <div class="d-flex justify-content-between align-items-center gap-2">
+              <div class="flex-grow-1" style="min-width: 0; line-height: 1.35;">
                 <span class="badge bg-dark me-1">${z.codigo_art}</span>
-                <strong class="text-dark-fix">${z.nombre_art}</strong>
+                <strong class="text-dark-fix text-break">${z.nombre_art}</strong>
               </div>
-              <span class="badge bg-success rounded-pill">Disp: ${z.cantidad}</span>
+              <span class="badge bg-success rounded-pill flex-shrink-0 px-2 py-1">Disp: ${z.cantidad}</span>
             </div>
-            <div class="small text-muted mt-1 d-flex justify-content-between">
+            <div class="small text-muted mt-1 d-flex justify-content-between flex-wrap gap-1">
               <span><b class="text-primary">ODS #${z.id_ods}</b> ${hotelEv ? ('· ' + hotelEv) : ''}</span>
               <span>📅 ${fechaEv}</span>
             </div>
@@ -4380,18 +4876,23 @@
       const obs = document.getElementById("hoja-input-obs").value.trim();
       const areaActual = document.getElementById("viaje-add-zona-origen")?.value || "BONFIL MOBILIARIO";
 
-      // Si no coincide con ningún artículo de su zona pero escribió una descripción, pasa automáticamente como EXTRA
+      // Si no coincide con ningún artículo de su zona, revisar si coincide con el catálogo o pasarlo como EXTRA
       if (!z) {
-        if (!desRaw || cantInput <= 0) {
-          return Swal.fire("Faltan datos", "Escribe el artículo de tu Zona (o la descripción si es un EXTRA) e indica la cantidad.", "warning");
+        if ((!desRaw && !codRaw) || cantInput <= 0) {
+          return Swal.fire("Faltan datos", "Escribe el artículo de tu Zona (o el código/descripción si es un EXTRA) e indica la cantidad.", "warning");
         }
-        const codExtra = codRaw ? codRaw.toUpperCase() : "EXTRA";
+        const artCatMatch = (STATE.catalogos.articulos || []).find(a =>
+          (codEscrito && String(a.codigo || "").trim().toLowerCase() === codEscrito) ||
+          (desEscrita && String(a.nombre || "").trim().toLowerCase() === desEscrita)
+        );
+        const codExtra = artCatMatch ? artCatMatch.codigo : (codRaw && desRaw ? codRaw.toUpperCase() : "EXTRA");
+        const desExtra = artCatMatch ? artCatMatch.nombre : (desRaw || codRaw);
         const odsExtra = document.getElementById("hoja-input-ods").value.trim() || "EXTRA";
         const odsObjEx = (STATE.ods || []).find(o => String(o.id_ods) === String(odsExtra)) || {};
         const fechaEvExtra = document.getElementById("hoja-input-fecha-evento").value.trim() ||
           (odsObjEx.fecha_montaje ? formatearFechaHoraHojaDMY(odsObjEx.fecha_montaje) : obtenerFechaActualFormatoHoja());
 
-        mostrarCargandoSwal("Anotando EXTRA en Hoja...", `${cantInput} pza(s) de ${desRaw}`);
+        mostrarCargandoSwal("Anotando EXTRA en Hoja...", `${cantInput} pza(s) de ${desExtra}`);
         try {
           const res = await llamarApiPost({
             action: "subirItemsAViaje",
@@ -4400,8 +4901,8 @@
               items: [{
                 es_extra: true,
                 codigo_art: codExtra,
-                nombre_art: desRaw,
-                tipo_art: "COMPLEMENTO",
+                nombre_art: desExtra,
+                tipo_art: artCatMatch ? (artCatMatch.tipo || "COMPLEMENTO") : "COMPLEMENTO",
                 zona_origen: areaActual,
                 cantidad: cantInput,
                 id_ods: odsExtra,
@@ -4589,7 +5090,7 @@
             ` : ''}
             <td class="small text-muted">${it.novedad || ''}</td>
             <td class="text-center">
-              ${v.estado === "EN_CARGA" ? `
+              ${(v.estado === "EN_CARGA" && usuarioPuedeModificarZona(it.zona_origen)) ? `
                 <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-0" onclick="bajarItemDeCamion('${v.id_viaje}', '${it.id_det}')" title="Quitar renglón y devolver a Zona de Alistamiento">
                   <i class="bi bi-trash3"></i>
                 </button>
@@ -4741,7 +5242,7 @@
 
             <div class="center-brand">
               <div class="title">HOJA DE TRASLADO ${bodegaTitulo}</div>
-              <img src="https://drive.google.com/thumbnail?id=1eFvxd-Z325JIwTU1VNFm-8fgX_twcIO0&sz=w200" alt="Zúñiga Deco Cancún">
+              <img src="https://drive.google.com/thumbnail?id=1eFvxd-Z325JIwTU1VNFm-8fgX_twcIO0&sz=w200" onerror="this.style.display='none'" alt="Zúñiga Deco Cancún">
             </div>
 
             <div class="right-dest">
@@ -4771,7 +5272,7 @@
                 ODS: <span style="display:inline-block; min-width:170px; border-bottom:1.5px solid #000; text-align:center; padding: 0 8px;">${odsCabecera}</span>
               </div>
               <div class="title" style="margin-top:4px;">ENTREGA DE ARTICULOS A OP</div>
-              <img src="https://drive.google.com/thumbnail?id=1eFvxd-Z325JIwTU1VNFm-8fgX_twcIO0&sz=w200" alt="Zúñiga Deco Cancún" style="width:60px; height:60px;">
+              <img src="https://drive.google.com/thumbnail?id=1eFvxd-Z325JIwTU1VNFm-8fgX_twcIO0&sz=w200" onerror="this.style.display='none'" alt="Zúñiga Deco Cancún" style="width:60px; height:60px;">
             </div>
 
             <div class="right-dest" style="width: 30%;">
@@ -4956,9 +5457,33 @@
               font-size: 11.5px;
               letter-spacing: 0.3px;
             }
+            .no-print-bar {
+              display: flex;
+              justify-content: flex-end;
+              gap: 8px;
+              margin-bottom: 10px;
+            }
+            .btn-print-manual {
+              background: #0f172a;
+              color: #fff;
+              border: none;
+              border-radius: 999px;
+              padding: 7px 18px;
+              font-weight: bold;
+              font-size: 12px;
+              cursor: pointer;
+            }
+            @media print {
+              .no-print-bar {
+                display: none !important;
+              }
+            }
           </style>
         </head>
         <body>
+          <div class="no-print-bar">
+            <button type="button" class="btn-print-manual" onclick="window.print()">🖨️ Imprimir Formato</button>
+          </div>
           <div class="sheet-wrapper">
             ${cabeceraHtml}
 
@@ -5383,9 +5908,11 @@
           const fechaEv = formatearFechaHoraHojaDMY(z.fecha_montaje || odsInfo.fecha_montaje || "");
           return `
             <div class="suggest-item" onclick="seleccionarItemEnGeneradorHoja('${z.id_reg}')">
-              <div class="d-flex justify-content-between">
-                <span><span class="badge bg-dark me-1">${z.codigo_art}</span><strong>${z.nombre_art}</strong></span>
-                <span class="badge bg-success rounded-pill">En Zona: ${z.cantidad}</span>
+              <div class="d-flex justify-content-between align-items-center gap-2">
+                <div class="flex-grow-1" style="min-width: 0; line-height: 1.35;">
+                  <span class="badge bg-dark me-1">${z.codigo_art}</span><strong class="text-break">${z.nombre_art}</strong>
+                </div>
+                <span class="badge bg-success rounded-pill flex-shrink-0 px-2 py-1">En Zona: ${z.cantidad}</span>
               </div>
               <div class="small text-muted mt-1">ODS #${z.id_ods} · 📅 ${fechaEv}</div>
             </div>`;
@@ -5395,9 +5922,11 @@
       if (coincidenciasCat.length > 0) {
         html += `<div class="px-2 py-1 bg-light border-bottom small fw-bold text-secondary">Del Catálogo General de Artículos:</div>`;
         html += coincidenciasCat.map(a => `
-          <div class="suggest-item d-flex justify-content-between align-items-center" onclick="seleccionarArticuloCatalogoEnGeneradorHoja('${String(a.codigo || "").replace(/'/g, "\\'")}', '${String(a.nombre || "").replace(/'/g, "\\'")}')">
-            <span><span class="badge bg-secondary me-1">${a.codigo}</span><strong>${a.nombre}</strong></span>
-            <span class="badge bg-light text-dark border">Catálogo</span>
+          <div class="suggest-item d-flex justify-content-between align-items-center gap-2" onclick="seleccionarArticuloCatalogoEnGeneradorHoja('${String(a.codigo || "").replace(/'/g, "\\'")}', '${String(a.nombre || "").replace(/'/g, "\\'")}')">
+            <div class="flex-grow-1" style="min-width: 0; line-height: 1.35;">
+              <span class="badge bg-secondary me-1">${a.codigo}</span><strong class="text-break">${a.nombre}</strong>
+            </div>
+            <span class="badge bg-light text-dark border flex-shrink-0 px-2 py-1">Catálogo</span>
           </div>
         `).join("");
       }
@@ -5426,6 +5955,11 @@
 
       document.getElementById("gen-hoja-suggest-codigo").classList.add("d-none");
       document.getElementById("gen-hoja-suggest-descripcion").classList.add("d-none");
+      const inpCant = document.getElementById("gen-hoja-input-cant");
+      if (inpCant) {
+        inpCant.focus();
+        inpCant.select();
+      }
     }
 
     function seleccionarItemEnGeneradorHoja(idReg) {
@@ -5442,7 +5976,10 @@
       document.getElementById("gen-hoja-input-ods").value = z.id_ods || "";
       document.getElementById("gen-hoja-input-codigo").value = z.codigo_art || "";
       document.getElementById("gen-hoja-input-descripcion").value = z.nombre_art || "";
-      document.getElementById("gen-hoja-input-cant").value = z.cantidad;
+      const inpCant = document.getElementById("gen-hoja-input-cant");
+      if (inpCant) {
+        inpCant.value = z.cantidad;
+      }
 
       // Si estamos en Modo 2 (ENTREGA DE ARTICULOS A OP / EVENTO), autollenar ODS, FECHA EVENTO y LUGAR en la cabecera
       if (MODO_HOJA_OPERACION === "EVENTO") {
@@ -5457,14 +5994,69 @@
 
       document.getElementById("gen-hoja-suggest-codigo").classList.add("d-none");
       document.getElementById("gen-hoja-suggest-descripcion").classList.add("d-none");
+      if (inpCant) {
+        inpCant.focus();
+        inpCant.select();
+      }
     }
 
     function anotarRenglonEnGeneradorHoja() {
-      const cod = document.getElementById("gen-hoja-input-codigo").value.trim().toUpperCase() || "EXTRA";
-      const des = document.getElementById("gen-hoja-input-descripcion").value.trim();
-      const ods = document.getElementById("gen-hoja-input-ods").value.trim() || (document.getElementById("gen-hoja-ods-evento")?.value || "").trim() || "S/N";
+      const codRaw = document.getElementById("gen-hoja-input-codigo").value.trim();
+      const desRaw = document.getElementById("gen-hoja-input-descripcion").value.trim();
+      const codLower = codRaw.toLowerCase();
+      const desLower = desRaw.toLowerCase();
+      const area = (document.getElementById("gen-hoja-area")?.value || "").toUpperCase();
+
+      // Si el usuario escribió un código o nombre exacto sin pulsar la lista desplegable, autocompletar desde Zona o Catálogo
+      let matchZona = null;
+      let matchCat = null;
+      if (codLower || desLower) {
+        matchZona = (STATE.zonas || []).find(z =>
+          String(z.zona || "").toUpperCase() === area &&
+          Number(z.cantidad) > 0 &&
+          ((codLower && String(z.codigo_art || "").trim().toLowerCase() === codLower) ||
+           (desLower && String(z.nombre_art || "").trim().toLowerCase() === desLower))
+        );
+        if (!matchZona) {
+          matchCat = (STATE.catalogos.articulos || []).find(a =>
+            (codLower && String(a.codigo || "").trim().toLowerCase() === codLower) ||
+            (desLower && String(a.nombre || "").trim().toLowerCase() === desLower)
+          );
+        }
+      }
+
+      let cod = "EXTRA";
+      let des = "";
+      if (matchZona) {
+        cod = String(matchZona.codigo_art || "EXTRA").toUpperCase();
+        des = desRaw || matchZona.nombre_art || cod;
+      } else if (matchCat) {
+        cod = String(matchCat.codigo || "EXTRA").toUpperCase();
+        des = desRaw || matchCat.nombre || cod;
+      } else {
+        // Si no coincide con Zona ni Catálogo, pasa directamente como EXTRA
+        if (codRaw && desRaw) {
+          cod = codRaw.toUpperCase();
+          des = desRaw;
+        } else if (desRaw) {
+          cod = "EXTRA";
+          des = desRaw;
+        } else if (codRaw) {
+          cod = "EXTRA";
+          des = codRaw;
+        }
+      }
+
+      const odsInput = document.getElementById("gen-hoja-input-ods").value.trim();
+      const odsCab = (document.getElementById("gen-hoja-ods-evento")?.value || "").trim();
+      const ods = odsInput || (matchZona && matchZona.id_ods ? String(matchZona.id_ods) : "") || odsCab || "S/N";
+
       const fechaCol1Raw = document.getElementById("gen-hoja-input-fecha-ev").value.trim();
-      const fechaCol1 = fechaCol1Raw ? formatearFechaHoraHojaDMY(fechaCol1Raw) : obtenerFechaActualFormatoHoja();
+      const fechaZonaRaw = (matchZona && matchZona.fecha_montaje) ? matchZona.fecha_montaje : "";
+      const fechaCol1 = fechaCol1Raw
+        ? formatearFechaHoraHojaDMY(fechaCol1Raw)
+        : (MODO_HOJA_OPERACION !== "EVENTO" && fechaZonaRaw ? formatearFechaHoraHojaDMY(fechaZonaRaw) : obtenerFechaActualFormatoHoja());
+
       const cant = Number(document.getElementById("gen-hoja-input-cant").value) || 0;
       const prep = (document.getElementById("gen-hoja-input-prep")?.value || "").trim();
       const preMon = (document.getElementById("gen-hoja-input-premon")?.value || "").trim();
@@ -5474,7 +6066,7 @@
       const obs = document.getElementById("gen-hoja-input-obs").value.trim();
 
       if (!des || cant <= 0) {
-        return Swal.fire("Faltan datos", "Indica al menos la Descripción del artículo (o EXTRA) y la Cantidad.", "warning");
+        return Swal.fire("Faltan datos", "Indica el Artículo (Código o Descripción, o escríbelo directo si es EXTRA) y la Cantidad.", "warning");
       }
 
       RENGLONES_GENERADOR_HOJA.push({
@@ -5502,6 +6094,9 @@
         const el = document.getElementById(id);
         if (el) el.value = "";
       });
+      document.getElementById("gen-hoja-suggest-codigo")?.classList.add("d-none");
+      document.getElementById("gen-hoja-suggest-descripcion")?.classList.add("d-none");
+      document.getElementById("gen-hoja-suggest-ods-fila")?.classList.add("d-none");
       renderizarRenglonesGeneradorHoja();
     }
 
@@ -5835,6 +6430,11 @@
     // PASO D: TOMAR CARGA DE UN VEHÍCULO (BODEGA MÓVIL) HACIA MI ZONA DE ALISTAMIENTO
     // =========================================================================
     function abrirModalCompletarViaje(idViaje) {
+      const perf = obtenerPerfilPermisosUsuarioActual();
+      if (!perf.enPermisos || perf.zonas.length === 0) {
+        return Swal.fire("Solo lectura", "Tu usuario no está en la hoja PERMISOS para bajar carga a una Zona de Alistamiento.", "info");
+      }
+
       const v = (STATE.viajes || []).find(x => String(x.id_viaje) === String(idViaje));
       if (!v) return;
       STATE.viajeACompletar = v;
@@ -5845,13 +6445,14 @@
         `Ruta actual: ${v.bodega_origen} → ${v.destino} · Chofer: ${v.chofer || 'N/A'}`;
       document.getElementById("input-obs-cierre-viaje").value = "";
 
-      // Preseleccionar la zona destino acorde al destino o bodega global
+      // Mostrar en "Mi Zona de Alistamiento" únicamente las zonas permitidas para este usuario
       const selMiZona = document.getElementById("rec-select-mi-zona-destino");
       if (selMiZona) {
-        const destUpper = String(v.destino || STATE.bodegaGlobal || "BONFIL").toUpperCase();
-        if (destUpper === "CEDIS") selMiZona.value = "CEDIS";
-        else if (destUpper === "PUERTO") selMiZona.value = "PUERTO";
-        else if (!selMiZona.value.startsWith("BONFIL")) selMiZona.value = "BONFIL MOBILIARIO";
+        selMiZona.innerHTML = perf.zonas.map(z => `<option value="${z}">${z}</option>`).join("");
+        const destUpper = String(v.destino || STATE.bodegaGlobal || "").toUpperCase();
+        if (perf.zonas.includes(destUpper)) {
+          selMiZona.value = destUpper;
+        }
       }
 
       const cont = document.getElementById("contenedor-items-completar-viaje");
@@ -5963,6 +6564,11 @@
     let SELECCION_REPORTE_LOCACION = {}; // { id_reg: { cant, novedad } }
 
     function abrirModalReporteViajeLocacion() {
+      const perf = obtenerPerfilPermisosUsuarioActual();
+      if (!perf.enPermisos || perf.zonas.length === 0) {
+        return Swal.fire("Solo lectura", "Tu usuario no está en la hoja PERMISOS para recibir artículos en una Zona de Alistamiento.", "info");
+      }
+
       SELECCION_REPORTE_LOCACION = {};
 
       // Limpiar input buscador de Chofer y poblar Vehículos
@@ -5977,12 +6583,10 @@
           (STATE.catalogos.vehiculos || []).map(v => `<option value="${v.nombre}">${v.nombre}</option>`).join("");
       }
 
-      // Preseleccionar Mi Zona de Alistamiento según bodega activa
+      // Mostrar en "Mi Zona de Alistamiento Destino" únicamente las zonas permitidas para este usuario
       const selZonaDest = document.getElementById("rep-loc-zona-destino");
       if (selZonaDest) {
-        if (STATE.bodegaGlobal === "CEDIS") selZonaDest.value = "CEDIS";
-        else if (STATE.bodegaGlobal === "PUERTO") selZonaDest.value = "PUERTO";
-        else if (!selZonaDest.value.startsWith("BONFIL")) selZonaDest.value = "BONFIL MOBILIARIO";
+        selZonaDest.innerHTML = perf.zonas.map(z => `<option value="${z}">${z}</option>`).join("");
       }
 
       // Poblar filtro de hoteles que actualmente tienen artículos en LOCACIONES

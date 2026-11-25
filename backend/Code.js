@@ -565,6 +565,7 @@ function apiObtenerDatosIniciales() {
     zonas: estadoOp.zonas,
     viajes: estadoOp.viajes,
     historial: estadoOp.historial,
+    permisos: estadoOp.permisos || [],
     zonas_validas: EYS_CONFIG.ZONAS_VALIDAS,
     bodegas_fisicas: EYS_CONFIG.BODEGAS_FISICAS
   };
@@ -910,12 +911,93 @@ function _leerEstadoOperativoCompleto(ssOp) {
     return String(b.fecha_hora || "").localeCompare(String(a.fecha_hora || ""));
   });
 
+  // 5. PERMISOS (usuario | bodega | zona)
+  const listaPermisos = _leerHojaPermisosSegura(ssOp);
+
   return {
     ods: listaODS,
     zonas: listaZonas,
     viajes: listaViajes,
-    historial: listaHistorial
+    historial: listaHistorial,
+    permisos: listaPermisos
   };
+}
+
+function _leerHojaPermisosSegura(ssOp) {
+  const listaPermisos = [];
+  try {
+    const ssToSearch = [ssOp];
+    try {
+      ssToSearch.push(SpreadsheetApp.openById(EYS_CONFIG.IDS.SS_CATALOGOS));
+    } catch (eCatPerm) {}
+
+    let sheetPerm = null;
+    for (let k = 0; k < ssToSearch.length; k++) {
+      const ss = ssToSearch[k];
+      if (!ss) continue;
+      sheetPerm = ss.getSheetByName("PERMISOS");
+      if (!sheetPerm) {
+        const hojas = ss.getSheets();
+        for (let s = 0; s < hojas.length; s++) {
+          if (String(hojas[s].getName() || "").trim().toUpperCase() === "PERMISOS") {
+            sheetPerm = hojas[s];
+            break;
+          }
+        }
+      }
+      if (sheetPerm && sheetPerm.getLastRow() >= 1) break;
+    }
+
+    if (sheetPerm && sheetPerm.getLastRow() >= 1) {
+      const dP = sheetPerm.getDataRange().getValues();
+      let idxUsr = 0;
+      let idxBod = 1;
+      let idxZon = 2;
+      let startRow = 1;
+
+      const row0 = dP[0].map(function (c) { return String(c || "").trim().toLowerCase(); });
+      const fila0TieneEmail = row0.some(function (c) { return c.indexOf("@") !== -1; });
+
+      if (fila0TieneEmail) {
+        startRow = 0;
+        for (let c = 0; c < row0.length; c++) {
+          if (row0[c].indexOf("@") !== -1) {
+            idxUsr = c;
+            idxBod = c + 1;
+            idxZon = c + 2;
+            break;
+          }
+        }
+      } else {
+        for (let col = 0; col < row0.length; col++) {
+          const h = row0[col];
+          if (h.indexOf("usuario") !== -1 || h.indexOf("correo") !== -1 || h.indexOf("email") !== -1 || h.indexOf("mail") !== -1) {
+            idxUsr = col;
+          } else if (h.indexOf("bodega") !== -1 || h.indexOf("sede") !== -1) {
+            idxBod = col;
+          } else if (h.indexOf("zona") !== -1 || h.indexOf("area") !== -1 || h.indexOf("área") !== -1) {
+            idxZon = col;
+          }
+        }
+      }
+
+      for (let p = startRow; p < dP.length; p++) {
+        const rp = dP[p];
+        const usr = String(rp[idxUsr] || "").trim().toLowerCase();
+        const bod = String(rp[idxBod] || "").trim().toUpperCase();
+        const zon = String(rp[idxZon] || "").trim().toUpperCase();
+        if (!usr || usr === "usuario" || usr === "correo" || usr === "email") continue;
+        listaPermisos.push({
+          usuario: usr,
+          bodega: bod,
+          zona: zon
+        });
+      }
+    }
+  } catch (ePerm) {
+    Logger.log("Aviso leyendo PERMISOS: " + ePerm.message);
+  }
+  return listaPermisos;
 }
 
 /**
