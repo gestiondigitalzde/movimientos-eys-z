@@ -421,9 +421,19 @@
       overflow-y: visible;
       -webkit-overflow-scrolling: touch;
       scroll-behavior: smooth;
-      padding-bottom: 255px;
-      margin-bottom: -245px;
+      padding-bottom: 8px;
+      margin-bottom: 0;
       border-radius: 10px;
+    }
+
+    .hoja-carousel-scroll:has(.suggest-box:not(.d-none)) {
+      padding-bottom: 255px;
+      margin-bottom: -247px;
+      pointer-events: none;
+    }
+
+    .hoja-carousel-scroll:has(.suggest-box:not(.d-none)) table {
+      pointer-events: auto;
     }
 
     .hoja-carousel-scroll::-webkit-scrollbar {
@@ -653,15 +663,15 @@
 
           <!-- Selector de Bodega Global -->
           <div class="dropdown">
-            <button class="btn btn-sm btn-outline-secondary dropdown-toggle rounded-pill px-3 fw-bold d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle rounded-pill px-3 fw-bold d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" id="btn-dropdown-bodega-global">
               <i class="bi bi-geo-alt-fill text-danger"></i>
               <span id="lbl-bodega-global">BONFIL</span>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 p-2">
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 p-2" id="menu-dropdown-bodega-global">
               <li><h6 class="dropdown-header small text-uppercase fw-bold">Bodega Activa</h6></li>
-              <li><a class="dropdown-item rounded-3 fw-bold" href="#" onclick="cambiarBodegaGlobal('BONFIL'); return false;">📍 BONFIL</a></li>
-              <li><a class="dropdown-item rounded-3 fw-bold" href="#" onclick="cambiarBodegaGlobal('CEDIS'); return false;">📍 CEDIS</a></li>
-              <li><a class="dropdown-item rounded-3 fw-bold" href="#" onclick="cambiarBodegaGlobal('PUERTO'); return false;">📍 PUERTO</a></li>
+              <li data-bodega-item="BONFIL"><a class="dropdown-item rounded-3 fw-bold" href="#" onclick="cambiarBodegaGlobal('BONFIL'); return false;">📍 BONFIL</a></li>
+              <li data-bodega-item="CEDIS"><a class="dropdown-item rounded-3 fw-bold" href="#" onclick="cambiarBodegaGlobal('CEDIS'); return false;">📍 CEDIS</a></li>
+              <li data-bodega-item="PUERTO"><a class="dropdown-item rounded-3 fw-bold" href="#" onclick="cambiarBodegaGlobal('PUERTO'); return false;">📍 PUERTO</a></li>
             </ul>
           </div>
 
@@ -959,13 +969,18 @@
            SUB-VISTA INTERNA DE ALISTAMIENTO: IMPRESIÓN DE ETIQUETAS NIIMBOT B1
            ================================================================= -->
       <section id="vista-etiquetas" class="flex-grow-1 p-3 d-none">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
           <h6 class="fw-bold text-dark-fix mb-0">
             <i class="bi bi-tags-fill text-warning me-2"></i>Generador de Etiquetas Térmicas con Logo Zúñiga (Niimbot B1 · 50x30 mm)
           </h6>
-          <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold" onclick="navegarModulo('zonas')">
-            <i class="bi bi-arrow-left me-1"></i>Volver a Alistamiento
-          </button>
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="resetearFormularioEtiquetasEnBlanco()">
+              <i class="bi bi-eraser-fill me-1"></i>Borrar
+            </button>
+            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold" onclick="navegarModulo('zonas')">
+              <i class="bi bi-arrow-left me-1"></i>Volver a Alistamiento
+            </button>
+          </div>
         </div>
 
         <div class="row g-3">
@@ -1033,9 +1048,14 @@
                 </label>
               </div>
 
-              <button type="button" class="btn btn-primary w-100 rounded-pill py-2 fw-bold shadow-sm" onclick="generarEtiquetaDesdeFormulario()">
-                <i class="bi bi-magic me-2"></i>Generar Vista Previa de Etiqueta
-              </button>
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-danger rounded-pill px-3 py-2 fw-bold" onclick="resetearFormularioEtiquetasEnBlanco()" title="Borrar datos y restablecer a valores predeterminados">
+                  <i class="bi bi-eraser-fill me-1"></i>Borrar
+                </button>
+                <button type="button" class="btn btn-primary flex-grow-1 rounded-pill py-2 fw-bold shadow-sm" onclick="generarEtiquetaDesdeFormulario()">
+                  <i class="bi bi-magic me-2"></i>Generar Vista Previa de Etiqueta
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1095,6 +1115,9 @@
             </div>
             <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold" onclick="preguntarTipoHojaOperacion()">
               <i class="bi bi-arrow-repeat me-1"></i>Cambiar Tipo de Hoja
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="limpiarGeneradorHojaOperacion()">
+              <i class="bi bi-eraser-fill me-1"></i>Limpiar Hoja
             </button>
           </div>
         </div>
@@ -2386,7 +2409,19 @@
         }
       }
 
-      // Si el usuario tiene permisos en una zona específica y la zona activa actual no es de las suyas, preseleccionar su primera zona permitida
+      // Filtrar el dropdown general de bodegas arriba para mostrar únicamente las bodegas a las que tiene acceso
+      const menuBodGlobal = document.getElementById("menu-dropdown-bodega-global");
+      if (menuBodGlobal) {
+        const bodegasVisibles = (perf.enPermisos && perf.bodegas.length > 0)
+          ? perf.bodegas
+          : ["BONFIL", "CEDIS", "PUERTO"];
+        menuBodGlobal.querySelectorAll("[data-bodega-item]").forEach(li => {
+          const codBod = li.getAttribute("data-bodega-item");
+          li.classList.toggle("d-none", !bodegasVisibles.includes(codBod));
+        });
+      }
+
+      // Si el usuario tiene permisos en una bodega/zona específica y la activa actual no es de las suyas, preseleccionar su primera bodega y zona permitida
       if (perf.enPermisos && perf.zonas.length > 0) {
         const selZona = document.getElementById("select-zona-activa");
         if (selZona && !perf.zonas.includes(selZona.value)) {
@@ -2395,6 +2430,7 @@
         const bodPrimera = perf.bodegas[0];
         if (bodPrimera && !perf.bodegas.includes(STATE.bodegaGlobal)) {
           STATE.bodegaGlobal = bodPrimera;
+          localStorage.setItem("eys_z_bodega_global", bodPrimera);
           const lblBod = document.getElementById("lbl-bodega-global");
           if (lblBod) lblBod.textContent = bodPrimera;
         }
@@ -2935,16 +2971,27 @@
     }
 
     function cambiarBodegaGlobal(bodega) {
+      const perf = obtenerPerfilPermisosUsuarioActual();
+      if (perf.enPermisos && perf.bodegas.length > 0 && !perf.bodegas.includes(bodega)) {
+        return;
+      }
       STATE.bodegaGlobal = bodega;
       localStorage.setItem("eys_z_bodega_global", bodega);
       document.getElementById("lbl-bodega-global").textContent = bodega;
 
-      // Sincronizar zona por defecto según bodega elegida
+      // Sincronizar zona por defecto según bodega elegida y permisos del usuario
       const selZona = document.getElementById("select-zona-activa");
       if (selZona) {
-        if (bodega === "BONFIL" && !selZona.value.startsWith("BONFIL")) selZona.value = "BONFIL MOBILIARIO";
-        else if (bodega === "CEDIS") selZona.value = "CEDIS";
-        else if (bodega === "PUERTO") selZona.value = "PUERTO";
+        if (bodega === "BONFIL" && !selZona.value.startsWith("BONFIL")) {
+          const zBonfilPermitida = (perf.enPermisos && perf.zonas.length > 0)
+            ? perf.zonas.find(z => z.startsWith("BONFIL"))
+            : null;
+          selZona.value = zBonfilPermitida || "BONFIL MOBILIARIO";
+        } else if (bodega === "CEDIS") {
+          selZona.value = "CEDIS";
+        } else if (bodega === "PUERTO") {
+          selZona.value = "PUERTO";
+        }
       }
       refrescarVistaActual();
     }
@@ -6179,6 +6226,14 @@
       document.querySelectorAll("#vista-hoja-operacion .suggest-box").forEach(b => b.classList.add("d-none"));
       cambiarModoHojaOperacion(MODO_HOJA_OPERACION);
       renderizarRenglonesGeneradorHoja();
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Hoja limpiada y restablecida",
+        showConfirmButton: false,
+        timer: 1300
+      });
     }
 
     function imprimirDesdeGeneradorHoja() {
@@ -6893,6 +6948,14 @@
         infoOds.className = "d-block mt-1 text-muted";
         infoOds.textContent = "Si la ODS no está registrada, se habilitan Locación y Fecha/Hora manuales.";
       }
+
+      const msg = document.getElementById("etq-msg");
+      if (msg) {
+        msg.className = "small fw-bold text-center mt-2 text-muted";
+        msg.textContent = "";
+      }
+
+      document.querySelectorAll("#vista-etiquetas .suggest-box").forEach(b => b.classList.add("d-none"));
 
       actualizarCandadoArticuloEtiqueta(false);
       dibujarLienzoVacioEtiqueta();
