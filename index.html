@@ -1934,8 +1934,9 @@
                     <td>
                       <input type="text" id="hoja-input-fecha-evento" class="form-control form-control-sm input-theme text-center fw-semibold" placeholder="Automático">
                     </td>
-                    <td id="hoja-td-ods" style="min-width: 135px;">
-                      <input type="text" id="hoja-input-ods" class="form-control form-control-sm input-theme text-center fw-bold text-primary" style="font-size: 0.92rem;" placeholder="ODS o S/N">
+                    <td id="hoja-td-ods" class="position-relative" style="min-width: 135px;">
+                      <input type="text" id="hoja-input-ods" class="form-control form-control-sm input-theme text-center fw-bold text-primary" style="font-size: 0.92rem;" placeholder="ODS o S/N" autocomplete="off" oninput="alEscribirOdsEnFilaHojaViaje(this.value)" onfocus="alEscribirOdsEnFilaHojaViaje(this.value)">
+                      <div id="hoja-suggest-ods-fila" class="suggest-box d-none text-start" style="min-width: 290px;"></div>
                     </td>
                     <td class="position-relative">
                       <input type="text"
@@ -2499,23 +2500,101 @@
     });
 
     // =========================================================================
-    // NAVEGACIÓN POR TECLADO EN LISTAS DESPLEGABLES (FLECHAS ARRIBA/ABAJO + ENTER PARA SELECCIONAR Y AVANZAR)
+    // NAVEGACIÓN POR TECLADO EN LISTAS DESPLEGABLES (FLECHAS ARRIBA/ABAJO + ENTER PARA DESPLEGAR, SELECCIONAR Y AVANZAR)
     // =========================================================================
+    let _ENFOCANDO_POR_TECLADO = false;
+
     function obtenerSuggestBoxDeInput(el) {
       if (!el) return null;
+      if (el.tagName === "SELECT") {
+        return obtenerOCrearSuggestBoxParaSelect(el);
+      }
       const contRel = el.closest(".position-relative") || el.parentElement;
       if (!contRel) return null;
       return contRel.querySelector(".suggest-box");
+    }
+
+    function obtenerOCrearSuggestBoxParaSelect(selectEl) {
+      if (!selectEl || selectEl.tagName !== "SELECT") return null;
+      const parent = selectEl.parentElement;
+      if (!parent) return null;
+      parent.classList.add("position-relative");
+      let box = parent.querySelector(".suggest-box.select-suggest-box[data-for-select='" + selectEl.id + "']");
+      if (!box) {
+        box = document.createElement("div");
+        box.className = "suggest-box select-suggest-box d-none text-start";
+        box.setAttribute("data-for-select", selectEl.id);
+        selectEl.insertAdjacentElement("afterend", box);
+      }
+      return box;
+    }
+
+    function desplegarOpcionesDeSelect(selectEl) {
+      const box = obtenerOCrearSuggestBoxParaSelect(selectEl);
+      if (!box) return false;
+      const opciones = Array.from(selectEl.options || []);
+      if (opciones.length === 0) return false;
+
+      const valorActual = selectEl.value;
+      box.innerHTML = opciones.map((opt, idx) => {
+        const esActual = opt.value === valorActual;
+        const texto = opt.textContent || opt.value || "(Sin selección)";
+        return `
+          <div class="suggest-item d-flex justify-content-between align-items-center gap-2${esActual ? ' suggest-item-active' : ''}" data-select-idx="${idx}">
+            <strong class="text-break">${texto}</strong>
+            ${esActual ? '<span class="badge bg-primary rounded-pill flex-shrink-0">Actual</span>' : ''}
+          </div>
+        `;
+      }).join("");
+
+      box.querySelectorAll(".suggest-item").forEach(item => {
+        item.addEventListener("click", function() {
+          const idx = Number(this.getAttribute("data-select-idx"));
+          if (!isNaN(idx) && selectEl.options[idx]) {
+            selectEl.selectedIndex = idx;
+            selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+          box.classList.add("d-none");
+          selectEl._esperandoPrimerEnter = false;
+        });
+      });
+
+      if (!box.querySelector(".suggest-item.suggest-item-active")) {
+        const primero = box.querySelector(".suggest-item");
+        if (primero) primero.classList.add("suggest-item-active");
+      }
+
+      box.classList.remove("d-none");
+      const activo = box.querySelector(".suggest-item.suggest-item-active");
+      if (activo) activo.scrollIntoView({ block: "nearest" });
+      return true;
+    }
+
+    function resaltarPrimeraOpcionSuggestBox(box) {
+      if (!box || box.classList.contains("d-none")) return;
+      const items = Array.from(box.querySelectorAll(".suggest-item"));
+      if (items.length === 0) return;
+      if (!box.querySelector(".suggest-item.suggest-item-active")) {
+        items[0].classList.add("suggest-item-active");
+      }
     }
 
     function enfocarElementoPorId(idTarget, seleccionarTexto) {
       const target = document.getElementById(idTarget);
       if (!target) return false;
       setTimeout(() => {
+        // Cerrar todas las cajas desplegables abiertas antes de llegar al nuevo campo
+        document.querySelectorAll(".suggest-box").forEach(b => b.classList.add("d-none"));
+        _ENFOCANDO_POR_TECLADO = true;
+        target._esperandoPrimerEnter = true;
         target.focus();
         if (seleccionarTexto && typeof target.select === "function") {
           target.select();
         }
+        // Asegurar que al llegar por teclado la lista empiece cerrada hasta que dé el primer Enter (o escriba)
+        const boxTarget = obtenerSuggestBoxDeInput(target);
+        if (boxTarget) boxTarget.classList.add("d-none");
+        _ENFOCANDO_POR_TECLADO = false;
       }, 25);
       return true;
     }
@@ -2525,32 +2604,48 @@
       if (!el || (el.tagName !== "INPUT" && el.tagName !== "SELECT")) return;
       if (el.id === "login-email" || el.id === "login-pin") return;
 
+      const esSelect = el.tagName === "SELECT";
       const box = obtenerSuggestBoxDeInput(el);
       const boxVisible = !!(box && !box.classList.contains("d-none"));
+
+      // Si el usuario escribe texto en un input, resaltar automáticamente la primera sugerencia para que pueda elegirla con Enter
+      if (!esSelect && e.key !== "Enter" && e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Escape" && e.key !== "Tab") {
+        el._esperandoPrimerEnter = false;
+        setTimeout(() => {
+          const b = obtenerSuggestBoxDeInput(el);
+          resaltarPrimeraOpcionSuggestBox(b);
+        }, 15);
+      }
 
       // 1. Flecha Abajo / Flecha Arriba para recorrer las opciones desplegadas
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
         if (!box && el.type === "number") return;
-        if (box) {
-          if (!boxVisible && e.key === "ArrowDown") {
-            if (typeof el.onfocus === "function") el.onfocus(e);
-            else if (typeof el.oninput === "function") el.oninput(e);
-          }
-          const items = (!box.classList.contains("d-none")) ? Array.from(box.querySelectorAll(".suggest-item")) : [];
-          if (items.length > 0) {
+        if (esSelect) {
+          if (!boxVisible) {
             e.preventDefault();
             e.stopPropagation();
-            let idx = items.findIndex(it => it.classList.contains("suggest-item-active"));
-            items.forEach(it => it.classList.remove("suggest-item-active"));
-            if (e.key === "ArrowDown") {
-              idx = (idx + 1) % items.length;
-            } else {
-              idx = (idx <= 0) ? (items.length - 1) : (idx - 1);
-            }
-            items[idx].classList.add("suggest-item-active");
-            items[idx].scrollIntoView({ block: "nearest" });
+            desplegarOpcionesDeSelect(el);
             return;
           }
+        } else if (box && !boxVisible && e.key === "ArrowDown") {
+          if (typeof el.onfocus === "function") el.onfocus(e);
+          else if (typeof el.oninput === "function") el.oninput(e);
+        }
+
+        const items = (box && !box.classList.contains("d-none")) ? Array.from(box.querySelectorAll(".suggest-item")) : [];
+        if (items.length > 0) {
+          e.preventDefault();
+          e.stopPropagation();
+          let idx = items.findIndex(it => it.classList.contains("suggest-item-active"));
+          items.forEach(it => it.classList.remove("suggest-item-active"));
+          if (e.key === "ArrowDown") {
+            idx = (idx + 1) % items.length;
+          } else {
+            idx = (idx <= 0) ? (items.length - 1) : (idx - 1);
+          }
+          items[idx].classList.add("suggest-item-active");
+          items[idx].scrollIntoView({ block: "nearest" });
+          return;
         }
       }
 
@@ -2559,24 +2654,53 @@
         e.preventDefault();
         e.stopPropagation();
         box.classList.add("d-none");
+        el._esperandoPrimerEnter = false;
         return;
       }
 
-      // 3. Enter / Intro: seleccionar opción resaltada (si existe) y continuar al siguiente campo
+      // 3. Enter / Intro en 3 pasos:
+      //    - Paso 1 (si tiene opciones y la lista está cerrada al llegar al campo): el primer Enter despliega las opciones.
+      //    - Paso 2 (si la lista está desplegada): Enter selecciona la opción resaltada y cierra la lista (quedándose en el campo).
+      //    - Paso 3 (si la lista ya está cerrada tras seleccionar o no tiene lista): Enter avanza al siguiente campo.
       if (e.key === "Enter") {
-        const items = boxVisible ? Array.from(box.querySelectorAll(".suggest-item")) : [];
-        const activeItem = boxVisible ? box.querySelector(".suggest-item.suggest-item-active") : null;
-        const itemPorSeleccionar = activeItem || (items.length === 1 ? items[0] : null);
-
-        if (itemPorSeleccionar) {
-          e.preventDefault();
-          e.stopPropagation();
-          itemPorSeleccionar.click();
-          if (box) box.classList.add("d-none");
-          avanzarAlSiguienteCampo(el, true);
-          return;
+        // Caso A: La lista desplegable YA está abierta -> Seleccionar la opción activa y cerrar la lista (quedándose en este campo)
+        if (boxVisible) {
+          const items = Array.from(box.querySelectorAll(".suggest-item"));
+          const activeItem = box.querySelector(".suggest-item.suggest-item-active") || (items.length > 0 ? items[0] : null);
+          if (activeItem) {
+            e.preventDefault();
+            e.stopPropagation();
+            activeItem.click();
+            box.classList.add("d-none");
+            el._esperandoPrimerEnter = false;
+            setTimeout(() => el.focus(), 10);
+            return;
+          }
         }
 
+        // Caso B: La lista está cerrada y es el PRIMER Enter en un campo con opciones (<select> o input con .suggest-box) -> Desplegar opciones
+        const tieneOpcionesDesplegables = esSelect || !!box;
+        if (tieneOpcionesDesplegables && !boxVisible && (el._esperandoPrimerEnter || (!esSelect && !String(el.value || "").trim()))) {
+          e.preventDefault();
+          e.stopPropagation();
+          el._esperandoPrimerEnter = false;
+
+          if (esSelect) {
+            const abrio = desplegarOpcionesDeSelect(el);
+            if (abrio) return;
+          } else if (box) {
+            if (typeof el.onfocus === "function") el.onfocus(e);
+            else if (typeof el.oninput === "function") el.oninput(e);
+            const itemsAbiertos = (!box.classList.contains("d-none")) ? Array.from(box.querySelectorAll(".suggest-item")) : [];
+            if (itemsAbiertos.length > 0) {
+              resaltarPrimeraOpcionSuggestBox(box);
+              return;
+            }
+            box.classList.add("d-none");
+          }
+        }
+
+        // Caso C: Ya seleccionó la opción (o es un campo sin opciones desplegables como FECHA o CANT.) -> Pasar al siguiente campo
         e.preventDefault();
         e.stopPropagation();
         if (box) box.classList.add("d-none");
@@ -2593,23 +2717,26 @@
       }
       if (id === "gen-hoja-chofer") {
         if (MODO_HOJA_OPERACION === "EVENTO") return enfocarElementoPorId("gen-hoja-encargado", true);
-        return enfocarElementoPorId("gen-hoja-destino", false);
+        return enfocarElementoPorId("gen-hoja-area", false);
       }
       if (id === "gen-hoja-encargado") {
-        return enfocarElementoPorId("gen-hoja-ods-evento", true);
-      }
-      if (id === "gen-hoja-ods-evento") {
-        const lug = document.getElementById("gen-hoja-lugar-input")?.value.trim();
-        if (!lug) return enfocarElementoPorId("gen-hoja-lugar-input", true);
-        return enfocarElementoPorId("gen-hoja-input-codigo", true);
-      }
-      if (id === "gen-hoja-lugar-input") {
-        return enfocarElementoPorId("gen-hoja-input-codigo", true);
+        return enfocarElementoPorId("gen-hoja-area", false);
       }
       if (id === "gen-hoja-area") {
-        return enfocarElementoPorId(MODO_HOJA_OPERACION === "EVENTO" ? "gen-hoja-ods-evento" : "gen-hoja-destino", false);
+        if (MODO_HOJA_OPERACION === "EVENTO") {
+          const odsEv = document.getElementById("gen-hoja-ods-evento")?.value.trim();
+          if (!odsEv) return enfocarElementoPorId("gen-hoja-ods-evento", true);
+          return enfocarElementoPorId("gen-hoja-lugar-input", true);
+        }
+        return enfocarElementoPorId("gen-hoja-destino", false);
       }
-      if (id === "gen-hoja-destino" || id === "gen-hoja-vehiculo" || id === "gen-hoja-input-fecha-ev") {
+      if (id === "gen-hoja-ods-evento") {
+        return enfocarElementoPorId("gen-hoja-lugar-input", true);
+      }
+      if (id === "gen-hoja-destino" || id === "gen-hoja-lugar-input") {
+        return enfocarElementoPorId("gen-hoja-vehiculo", false);
+      }
+      if (id === "gen-hoja-vehiculo" || id === "gen-hoja-input-fecha-ev") {
         return enfocarElementoPorId(MODO_HOJA_OPERACION === "EVENTO" ? "gen-hoja-input-codigo" : "gen-hoja-input-ods", true);
       }
       if (id === "gen-hoja-input-ods") {
@@ -2645,8 +2772,11 @@
         return enfocarElementoPorId("gen-hoja-input-cant", true);
       }
       if (id === "gen-hoja-input-cant") {
-        anotarRenglonEnGeneradorHoja();
-        return enfocarElementoPorId("gen-hoja-input-codigo", true);
+        const ok = anotarRenglonEnGeneradorHoja();
+        if (ok !== false) {
+          return enfocarElementoPorId(MODO_HOJA_OPERACION === "EVENTO" ? "gen-hoja-input-codigo" : "gen-hoja-input-ods", true);
+        }
+        return false;
       }
       if (id === "gen-hoja-input-prep") return enfocarElementoPorId("gen-hoja-input-premon", true);
       if (id === "gen-hoja-input-premon") return enfocarElementoPorId("gen-hoja-input-mon", true);
@@ -2654,8 +2784,11 @@
       if (id === "gen-hoja-input-des") return enfocarElementoPorId("gen-hoja-input-dev", true);
       if (id === "gen-hoja-input-dev") return enfocarElementoPorId("gen-hoja-input-obs", true);
       if (id === "gen-hoja-input-obs") {
-        anotarRenglonEnGeneradorHoja();
-        return enfocarElementoPorId("gen-hoja-input-codigo", true);
+        const ok = anotarRenglonEnGeneradorHoja();
+        if (ok !== false) {
+          return enfocarElementoPorId(MODO_HOJA_OPERACION === "EVENTO" ? "gen-hoja-input-codigo" : "gen-hoja-input-ods", true);
+        }
+        return false;
       }
 
       // --- B) MÓDULO 3: HOJA DE TRASLADO VIRTUAL (SUBIR AL CAMIÓN) ---
@@ -2687,7 +2820,9 @@
       }
       if (id === "hoja-input-cant" || id === "hoja-input-obs") {
         agregarRenglonHojaTraslado();
-        return enfocarElementoPorId("hoja-input-codigo", true);
+        const tdOds = document.getElementById("hoja-td-ods");
+        const odsVisible = tdOds && !tdOds.classList.contains("d-none");
+        return enfocarElementoPorId(odsVisible ? "hoja-input-ods" : "hoja-input-codigo", true);
       }
 
       // --- C) MÓDULO 2: INGRESAR ARTÍCULOS A ZONA DE ALISTAMIENTO ---
@@ -4802,8 +4937,61 @@
       if (lblMax) lblMax.textContent = "Máx: -";
       const boxCod = document.getElementById("hoja-suggest-codigo");
       const boxDes = document.getElementById("hoja-suggest-descripcion");
+      const boxOds = document.getElementById("hoja-suggest-ods-fila");
       if (boxCod) boxCod.classList.add("d-none");
       if (boxDes) boxDes.classList.add("d-none");
+      if (boxOds) boxOds.classList.add("d-none");
+
+      const tdOds = document.getElementById("hoja-td-ods");
+      const odsVisible = tdOds && !tdOds.classList.contains("d-none");
+      const scroller = document.getElementById("scroll-hoja-viaje-modal");
+      if (scroller) scroller.scrollTo({ left: 0, behavior: "smooth" });
+      enfocarElementoPorId(odsVisible ? "hoja-input-ods" : "hoja-input-codigo", true);
+    }
+
+    function alEscribirOdsEnFilaHojaViaje(valorOds) {
+      const q = String(valorOds || "").trim().toLowerCase();
+      const box = document.getElementById("hoja-suggest-ods-fila");
+
+      const exacto = (STATE.ods || []).find(o => String(o.id_ods).trim().toLowerCase() === q);
+      if (exacto && exacto.fecha_montaje) {
+        document.getElementById("hoja-input-fecha-evento").value = formatearFechaHoraHojaDMY(exacto.fecha_montaje);
+      }
+
+      if (!box) return;
+      const lista = (STATE.ods || []).filter(o =>
+        !q ||
+        String(o.id_ods || "").toLowerCase().includes(q) ||
+        String(o.locacion_nombre || "").toLowerCase().includes(q) ||
+        String(o.nombre_evento || "").toLowerCase().includes(q)
+      ).slice(0, 10);
+
+      if (lista.length === 0) {
+        box.classList.add("d-none");
+        return;
+      }
+
+      box.innerHTML = lista.map(o => `
+        <div class="suggest-item" onclick="seleccionarOdsFilaHojaViaje('${o.id_ods}')">
+          <div class="d-flex justify-content-between">
+            <strong class="text-primary">ODS #${o.id_ods}</strong>
+            <span class="small fw-bold">${formatearFechaHoraHojaDMY(o.fecha_montaje)}</span>
+          </div>
+          <div class="small text-muted">${o.locacion_nombre || ''} · ${o.nombre_evento || ''}</div>
+        </div>
+      `).join("");
+      box.classList.remove("d-none");
+    }
+
+    function seleccionarOdsFilaHojaViaje(idOds) {
+      document.getElementById("hoja-input-ods").value = idOds;
+      const box = document.getElementById("hoja-suggest-ods-fila");
+      if (box) box.classList.add("d-none");
+
+      const odsInfo = (STATE.ods || []).find(o => String(o.id_ods) === String(idOds));
+      if (odsInfo && odsInfo.fecha_montaje) {
+        document.getElementById("hoja-input-fecha-evento").value = formatearFechaHoraHojaDMY(odsInfo.fecha_montaje);
+      }
     }
 
     function obtenerItemsDisponiblesEnAreaHoja() {
@@ -4897,8 +5085,6 @@
 
       document.getElementById("hoja-suggest-codigo").classList.add("d-none");
       document.getElementById("hoja-suggest-descripcion").classList.add("d-none");
-      inpCant.focus();
-      inpCant.select();
     }
 
     async function agregarRenglonHojaTraslado() {
@@ -5197,137 +5383,30 @@
         v.fecha_evento_cabecera || v.fecha_montaje_general || (itemsParaImprimir[0] && itemsParaImprimir[0].fecha_montaje) || fechaActual
       );
 
-      // Solo dejar 3 renglones vacíos debajo de lo que se llenó (no toda la cuadrícula vacía)
-      const totalFilas = itemsParaImprimir.length + 3;
-      let filasHtml = "";
+      // Paginación inteligente con aprovechamiento completo de la hoja (A4 y Carta en horizontal):
+      // Cada hoja horizontal tiene capacidad máxima de 16 renglones (13 artículos + 3 de sobra).
+      // - Si hay <= 13 artículos en la hoja: se agregan 3 renglones vacíos de sobra.
+      // - Si hay 14 artículos: se agregan 2 vacíos (16 total).
+      // - Si hay 15 artículos: se agrega 1 vacío (16 total).
+      // - Si hay 16 artículos: se agregan 0 vacíos (16 total).
+      // - Si hay más de 16 artículos: salta a otra(s) hoja(s), repitiendo en TODAS las hojas el encabezado completo arriba y las firmas abajo.
+      const MAX_FILAS_POR_HOJA = 16;
+      const MAX_FILAS_SOBRA = 3;
 
-      if (!esEvento) {
-        // FORMATO 1: HOJA DE TRASLADO ENTRE BODEGAS (6 COLUMNAS)
-        for (let i = 0; i < totalFilas; i++) {
-          const it = itemsParaImprimir[i];
-          if (it) {
-            const fechaEvFmt = formatearFechaHoraHojaDMY(it.fecha_montaje || "");
-            filasHtml += `
-              <tr>
-                <td class="center">${fechaEvFmt}</td>
-                <td class="center bold">${it.id_ods || ""}</td>
-                <td class="center bold">${it.codigo_art || ""}</td>
-                <td>${it.nombre_art || ""}</td>
-                <td class="center bold">${it.cant_enviada || ""}</td>
-                <td>${it.novedad || ""}</td>
-              </tr>`;
-          } else {
-            filasHtml += `
-              <tr>
-                <td>&nbsp;</td>
-                <td>&nbsp;</td>
-                <td>&nbsp;</td>
-                <td>&nbsp;</td>
-                <td>&nbsp;</td>
-                <td>&nbsp;</td>
-              </tr>`;
-          }
-        }
+      const paginasItems = [];
+      if (itemsParaImprimir.length === 0) {
+        paginasItems.push([]);
       } else {
-        // FORMATO 2: ENTREGA DE ARTÍCULOS A OP / OPERACIÓN A EVENTO (10 COLUMNAS: FECHA ENTREGA | CODIGO OP | DESCRIPCIÓN | CANT. | PREP | PRE MON | MON | DES | DEV | OBSERVACIONES)
-        for (let i = 0; i < totalFilas; i++) {
-          const it = itemsParaImprimir[i];
-          if (it) {
-            const fEntrega = formatearFechaHoraHojaDMY(it.fecha_entrega || it.fecha_montaje || fechaActual);
-            filasHtml += `
-              <tr>
-                <td class="center">${fEntrega}</td>
-                <td class="center bold">${it.codigo_art || ""}</td>
-                <td>${it.nombre_art || ""}</td>
-                <td class="center bold">${it.cant_enviada || ""}</td>
-                <td class="center">${it.prep || "&nbsp;"}</td>
-                <td class="center">${it.pre_mon || "&nbsp;"}</td>
-                <td class="center">${it.mon || "&nbsp;"}</td>
-                <td class="center">${it.des || "&nbsp;"}</td>
-                <td class="center">${it.dev || "&nbsp;"}</td>
-                <td>${it.novedad || ""}</td>
-              </tr>`;
-          } else {
-            filasHtml += `
-              <tr>
-                <td>&nbsp;</td>
-                <td>&nbsp;</td>
-                <td>&nbsp;</td>
-                <td>&nbsp;</td>
-                <td>&nbsp;</td>
-                <td>&nbsp;</td>
-                <td>&nbsp;</td>
-                <td>&nbsp;</td>
-                <td>&nbsp;</td>
-                <td>&nbsp;</td>
-              </tr>`;
-          }
+        for (let idx = 0; idx < itemsParaImprimir.length; idx += MAX_FILAS_POR_HOJA) {
+          paginasItems.push(itemsParaImprimir.slice(idx, idx + MAX_FILAS_POR_HOJA));
         }
       }
+      const totalPaginas = paginasItems.length;
 
       const win = window.open("", "_blank", "width=1060,height=780");
       if (!win) {
         return Swal.fire("Ventana bloqueada", "Permite las ventanas emergentes en tu navegador para imprimir el formato.", "warning");
       }
-
-      const cabeceraHtml = !esEvento ? `
-          <div class="top-grid">
-            <table class="info-box">
-              <tr>
-                <th>FECHA</th>
-                <td><b>${fechaActual}</b></td>
-              </tr>
-              <tr>
-                <th>CHOFER</th>
-                <td><b>${choferNombre}</b></td>
-              </tr>
-              <tr>
-                <th>AREA</th>
-                <td><b>${areaImpresa}</b></td>
-              </tr>
-            </table>
-
-            <div class="center-brand">
-              <div class="title">HOJA DE TRASLADO ${bodegaTitulo}</div>
-              <img src="https://drive.google.com/thumbnail?id=1eFvxd-Z325JIwTU1VNFm-8fgX_twcIO0&sz=w200" onerror="this.style.display='none'" alt="Zúñiga Deco Cancún">
-            </div>
-
-            <div class="right-dest">
-              SALIDA HACIA <span class="line">${salidaHacia}</span>
-              <div style="font-size:11px; margin-top:6px; font-weight:normal;">${v.id_viaje !== 'GEN-HOJA' ? ('Folio: <b>' + v.id_viaje + '</b> · ') : ''}Unidad: <b>${v.vehiculo || 'N/A'}</b></div>
-            </div>
-          </div>
-      ` : `
-          <div class="top-grid">
-            <table class="info-box">
-              <tr>
-                <th style="width: 125px;">FECHA EVENTO:</th>
-                <td><b>${fechaEventoCab}</b></td>
-              </tr>
-              <tr>
-                <th>CHOFER</th>
-                <td><b>${choferNombre}</b></td>
-              </tr>
-              <tr>
-                <th>SUPERVISOR / ENCARGADO</th>
-                <td><b>${encargadoMontaje}</b></td>
-              </tr>
-            </table>
-
-            <div class="center-brand" style="width: 34%;">
-              <div style="font-weight:900; font-size:15px; margin-bottom:5px;">
-                ODS: <span style="display:inline-block; min-width:170px; border-bottom:1.5px solid #000; text-align:center; padding: 0 8px;">${odsCabecera}</span>
-              </div>
-              <div class="title" style="margin-top:4px;">ENTREGA DE ARTICULOS A OP</div>
-              <img src="https://drive.google.com/thumbnail?id=1eFvxd-Z325JIwTU1VNFm-8fgX_twcIO0&sz=w200" onerror="this.style.display='none'" alt="Zúñiga Deco Cancún" style="width:60px; height:60px;">
-            </div>
-
-            <div class="right-dest" style="width: 30%;">
-              LUGAR: <span class="line">${salidaHacia}</span>
-              <div style="font-size:11px; margin-top:6px; font-weight:normal;">Área: <b>${areaImpresa}</b> ${v.vehiculo ? ('· Unidad: <b>' + v.vehiculo + '</b>') : ''}</div>
-            </div>
-          </div>
-      `;
 
       const theadHtml = !esEvento ? `
               <tr>
@@ -5385,6 +5464,160 @@
           </div>
       `;
 
+      const generarCabeceraPaginaHtml = function(numPag, totPag) {
+        const textoPag = totPag > 1 ? ` · Hoja <b>${numPag} de ${totPag}</b>` : "";
+        if (!esEvento) {
+          return `
+            <div class="top-grid">
+              <table class="info-box">
+                <tr>
+                  <th>FECHA</th>
+                  <td><b>${fechaActual}</b></td>
+                </tr>
+                <tr>
+                  <th>CHOFER</th>
+                  <td><b>${choferNombre}</b></td>
+                </tr>
+                <tr>
+                  <th>AREA</th>
+                  <td><b>${areaImpresa}</b></td>
+                </tr>
+              </table>
+
+              <div class="center-brand">
+                <div class="title">HOJA DE TRASLADO ${bodegaTitulo}</div>
+                <img src="https://drive.google.com/thumbnail?id=1eFvxd-Z325JIwTU1VNFm-8fgX_twcIO0&sz=w200" onerror="this.style.display='none'" alt="Zúñiga Deco Cancún">
+              </div>
+
+              <div class="right-dest">
+                SALIDA HACIA <span class="line">${salidaHacia}</span>
+                <div style="font-size:11px; margin-top:6px; font-weight:normal;">${v.id_viaje !== 'GEN-HOJA' ? ('Folio: <b>' + v.id_viaje + '</b> · ') : ''}Unidad: <b>${v.vehiculo || 'N/A'}</b>${textoPag}</div>
+              </div>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="top-grid">
+              <table class="info-box">
+                <tr>
+                  <th style="width: 125px;">FECHA EVENTO:</th>
+                  <td><b>${fechaEventoCab}</b></td>
+                </tr>
+                <tr>
+                  <th>CHOFER</th>
+                  <td><b>${choferNombre}</b></td>
+                </tr>
+                <tr>
+                  <th>SUPERVISOR / ENCARGADO</th>
+                  <td><b>${encargadoMontaje}</b></td>
+                </tr>
+              </table>
+
+              <div class="center-brand" style="width: 34%;">
+                <div style="font-weight:900; font-size:15px; margin-bottom:5px;">
+                  ODS: <span style="display:inline-block; min-width:170px; border-bottom:1.5px solid #000; text-align:center; padding: 0 8px;">${odsCabecera}</span>
+                </div>
+                <div class="title" style="margin-top:4px;">ENTREGA DE ARTICULOS A OP</div>
+                <img src="https://drive.google.com/thumbnail?id=1eFvxd-Z325JIwTU1VNFm-8fgX_twcIO0&sz=w200" onerror="this.style.display='none'" alt="Zúñiga Deco Cancún" style="width:60px; height:60px;">
+              </div>
+
+              <div class="right-dest" style="width: 30%;">
+                LUGAR: <span class="line">${salidaHacia}</span>
+                <div style="font-size:11px; margin-top:6px; font-weight:normal;">Área: <b>${areaImpresa}</b> ${v.vehiculo ? ('· Unidad: <b>' + v.vehiculo + '</b>') : ''}${textoPag}</div>
+              </div>
+            </div>
+          `;
+        }
+      };
+
+      const hojasCompletasHtml = paginasItems.map((itemsPagina, idxPag) => {
+        const filasVacias = Math.max(0, Math.min(MAX_FILAS_SOBRA, MAX_FILAS_POR_HOJA - itemsPagina.length));
+        const totalFilasPagina = itemsPagina.length + filasVacias;
+        let filasHtml = "";
+
+        if (!esEvento) {
+          for (let i = 0; i < totalFilasPagina; i++) {
+            const it = itemsPagina[i];
+            if (it) {
+              const fechaEvFmt = formatearFechaHoraHojaDMY(it.fecha_montaje || "");
+              filasHtml += `
+                <tr>
+                  <td class="center">${fechaEvFmt}</td>
+                  <td class="center bold">${it.id_ods || ""}</td>
+                  <td class="center bold">${it.codigo_art || ""}</td>
+                  <td>${it.nombre_art || ""}</td>
+                  <td class="center bold">${it.cant_enviada || ""}</td>
+                  <td>${it.novedad || ""}</td>
+                </tr>`;
+            } else {
+              filasHtml += `
+                <tr>
+                  <td>&nbsp;</td>
+                  <td>&nbsp;</td>
+                  <td>&nbsp;</td>
+                  <td>&nbsp;</td>
+                  <td>&nbsp;</td>
+                  <td>&nbsp;</td>
+                </tr>`;
+            }
+          }
+        } else {
+          for (let i = 0; i < totalFilasPagina; i++) {
+            const it = itemsPagina[i];
+            if (it) {
+              const fEntrega = formatearFechaHoraHojaDMY(it.fecha_entrega || it.fecha_montaje || fechaActual);
+              filasHtml += `
+                <tr>
+                  <td class="center">${fEntrega}</td>
+                  <td class="center bold">${it.codigo_art || ""}</td>
+                  <td>${it.nombre_art || ""}</td>
+                  <td class="center bold">${it.cant_enviada || ""}</td>
+                  <td class="center">${it.prep || "&nbsp;"}</td>
+                  <td class="center">${it.pre_mon || "&nbsp;"}</td>
+                  <td class="center">${it.mon || "&nbsp;"}</td>
+                  <td class="center">${it.des || "&nbsp;"}</td>
+                  <td class="center">${it.dev || "&nbsp;"}</td>
+                  <td>${it.novedad || ""}</td>
+                </tr>`;
+            } else {
+              filasHtml += `
+                <tr>
+                  <td>&nbsp;</td>
+                  <td>&nbsp;</td>
+                  <td>&nbsp;</td>
+                  <td>&nbsp;</td>
+                  <td>&nbsp;</td>
+                  <td>&nbsp;</td>
+                  <td>&nbsp;</td>
+                  <td>&nbsp;</td>
+                  <td>&nbsp;</td>
+                  <td>&nbsp;</td>
+                </tr>`;
+            }
+          }
+        }
+
+        const claseSalto = idxPag < totalPaginas - 1 ? " page-break" : "";
+        return `
+          <div class="sheet-wrapper${claseSalto}">
+            <div class="sheet-top-content">
+              ${generarCabeceraPaginaHtml(idxPag + 1, totalPaginas)}
+
+              <table class="main-table">
+                <thead>
+                  ${theadHtml}
+                </thead>
+                <tbody>
+                  ${filasHtml}
+                </tbody>
+              </table>
+            </div>
+
+            ${firmasHtml}
+          </div>
+        `;
+      }).join("");
+
       const htmlPrint = `
         <!DOCTYPE html>
         <html lang="es">
@@ -5393,8 +5626,8 @@
           <title>${esEvento ? 'ENTREGA DE ARTICULOS A OP' : 'HOJA DE TRASLADO'} · ${v.id_viaje} · ${areaImpresa}</title>
           <style>
             @page {
-              size: letter landscape;
-              margin: 16mm 18mm;
+              size: landscape;
+              margin: 7mm 9mm;
             }
             * {
               box-sizing: border-box;
@@ -5403,13 +5636,27 @@
               font-family: Arial, Helvetica, sans-serif;
               color: #000;
               margin: 0;
-              padding: 6px 10px;
-              font-size: 11.5px;
+              padding: 0;
+              font-size: 12px;
             }
             .sheet-wrapper {
               width: 100%;
+              min-height: 192mm;
               border: 1.5px solid #000;
-              padding: 16px 20px 22px 20px;
+              padding: 14px 18px 18px 18px;
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+              page-break-inside: avoid;
+              break-inside: avoid;
+            }
+            .sheet-top-content {
+              width: 100%;
+            }
+            .sheet-wrapper.page-break {
+              page-break-after: always;
+              break-after: page;
+              margin-bottom: 18px;
             }
             .top-grid {
               display: flex;
@@ -5424,12 +5671,12 @@
             }
             .info-box th, .info-box td {
               border: 1px solid #000;
-              padding: 5px 8px;
-              font-size: 11.5px;
+              padding: 5px 9px;
+              font-size: 12px;
               text-align: left;
             }
             .info-box th {
-              width: 115px;
+              width: 118px;
               background: #f1f5f9;
               font-weight: bold;
             }
@@ -5439,7 +5686,7 @@
             }
             .center-brand .title {
               font-weight: 900;
-              font-size: 14px;
+              font-size: 15px;
               margin-bottom: 4px;
               letter-spacing: 0.5px;
             }
@@ -5451,12 +5698,12 @@
             .right-dest {
               width: 34%;
               text-align: right;
-              font-size: 13px;
+              font-size: 13.5px;
               font-weight: bold;
             }
             .right-dest .line {
               display: inline-block;
-              min-width: 190px;
+              min-width: 195px;
               border-bottom: 1.5px solid #000;
               text-align: center;
               padding-bottom: 2px;
@@ -5468,9 +5715,9 @@
             }
             .main-table th, .main-table td {
               border: 1px solid #000;
-              padding: 5px 6px;
-              font-size: 11px;
-              height: 22px;
+              padding: 5.5px 7px;
+              font-size: 11.5px;
+              height: 26px;
             }
             .main-table th {
               background: #e2e8f0;
@@ -5483,15 +5730,16 @@
             .firmas-row {
               display: flex;
               justify-content: space-around;
-              margin-top: 64px;
-              padding-top: 10px;
+              margin-top: auto;
+              padding-top: 46px;
               text-align: center;
+              width: 100%;
             }
             .firma-col {
               width: 28%;
             }
             .firma-espacio {
-              min-height: 26px;
+              min-height: 24px;
               font-weight: normal;
               font-size: 11px;
               color: #222;
@@ -5524,27 +5772,17 @@
               .no-print-bar {
                 display: none !important;
               }
+              .sheet-wrapper.page-break {
+                margin-bottom: 0;
+              }
             }
           </style>
         </head>
         <body>
           <div class="no-print-bar">
-            <button type="button" class="btn-print-manual" onclick="window.print()">🖨️ Imprimir Formato</button>
+            <button type="button" class="btn-print-manual" onclick="window.print()">🖨️ Imprimir Formato (${totalPaginas} ${totalPaginas === 1 ? 'hoja' : 'hojas'})</button>
           </div>
-          <div class="sheet-wrapper">
-            ${cabeceraHtml}
-
-            <table class="main-table">
-              <thead>
-                ${theadHtml}
-              </thead>
-              <tbody>
-                ${filasHtml}
-              </tbody>
-            </table>
-
-            ${firmasHtml}
-          </div>
+          ${hojasCompletasHtml}
 
           <script>
             window.onload = function() {
@@ -5917,12 +6155,12 @@
       const boxDes = document.getElementById("gen-hoja-suggest-descripcion");
       const odsFiltroCab = MODO_HOJA_OPERACION === "EVENTO"
         ? String(document.getElementById("gen-hoja-ods-evento")?.value || "").trim()
-        : "";
+        : String(document.getElementById("gen-hoja-input-ods")?.value || "").trim();
 
       // 1. Buscar primero en la Zona de Alistamiento seleccionada
       const disponiblesZona = (STATE.zonas || []).filter(z => {
         if (String(z.zona || "").toUpperCase() !== area || Number(z.cantidad) <= 0) return false;
-        if (odsFiltroCab && String(z.id_ods || "") !== odsFiltroCab) return false;
+        if (odsFiltroCab && odsFiltroCab.toUpperCase() !== "S/N" && String(z.id_ods || "") !== odsFiltroCab) return false;
         return true;
       });
 
@@ -6002,11 +6240,6 @@
 
       document.getElementById("gen-hoja-suggest-codigo").classList.add("d-none");
       document.getElementById("gen-hoja-suggest-descripcion").classList.add("d-none");
-      const inpCant = document.getElementById("gen-hoja-input-cant");
-      if (inpCant) {
-        inpCant.focus();
-        inpCant.select();
-      }
     }
 
     function seleccionarItemEnGeneradorHoja(idReg) {
@@ -6041,10 +6274,6 @@
 
       document.getElementById("gen-hoja-suggest-codigo").classList.add("d-none");
       document.getElementById("gen-hoja-suggest-descripcion").classList.add("d-none");
-      if (inpCant) {
-        inpCant.focus();
-        inpCant.select();
-      }
     }
 
     function anotarRenglonEnGeneradorHoja() {
@@ -6113,7 +6342,8 @@
       const obs = document.getElementById("gen-hoja-input-obs").value.trim();
 
       if (!des || cant <= 0) {
-        return Swal.fire("Faltan datos", "Indica el Artículo (Código o Descripción, o escríbelo directo si es EXTRA) y la Cantidad.", "warning");
+        Swal.fire("Faltan datos", "Indica el Artículo (Código o Descripción, o escríbelo directo si es EXTRA) y la Cantidad.", "warning");
+        return false;
       }
 
       RENGLONES_GENERADOR_HOJA.push({
@@ -6145,6 +6375,11 @@
       document.getElementById("gen-hoja-suggest-descripcion")?.classList.add("d-none");
       document.getElementById("gen-hoja-suggest-ods-fila")?.classList.add("d-none");
       renderizarRenglonesGeneradorHoja();
+
+      const scroller = document.getElementById("scroll-hoja-generador");
+      if (scroller) scroller.scrollTo({ left: 0, behavior: "smooth" });
+      enfocarElementoPorId(MODO_HOJA_OPERACION === "EVENTO" ? "gen-hoja-input-codigo" : "gen-hoja-input-ods", true);
+      return true;
     }
 
     function renderizarRenglonesGeneradorHoja() {
