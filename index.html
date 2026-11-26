@@ -1255,7 +1255,12 @@
               <thead class="table-light text-center small fw-bold text-uppercase" id="gen-hoja-thead">
                 <tr>
                   <th style="width: 155px;" id="gen-th-col1">FECHA EVENTO</th>
-                  <th style="width: 135px; min-width: 135px;" id="gen-th-col-ods">ODS</th>
+                  <th style="width: 155px; min-width: 155px;" id="gen-th-col-ods">
+                    <label class="d-inline-flex align-items-center justify-content-center gap-2 m-0 cursor-pointer select-none" for="chk-ods-general-bodega" title="Llena la ODS abajo y marca este check para fijarla como ODS GENERAL y bloquear Fecha y ODS">
+                      <input type="checkbox" id="chk-ods-general-bodega" class="form-check-input m-0 cursor-pointer" style="width: 16px; height: 16px;" onchange="alAlternarCheckOdsGeneralBodega(this.checked)">
+                      <span id="lbl-th-ods-bodega">ODS</span>
+                    </label>
+                  </th>
                   <th style="width: 145px;">CODIGO OP</th>
                   <th style="min-width: 220px;">DESCRIPCIÓN *</th>
                   <th style="width: 90px;">CANT. *</th>
@@ -1273,10 +1278,10 @@
                   <td style="min-width: 215px;">
                     <div class="input-group input-group-sm">
                       <input type="text" id="gen-hoja-input-fecha-ev" class="form-control form-control-sm input-theme text-center fw-semibold" placeholder="24-Nov-2026 20:00">
-                      <button class="btn btn-outline-secondary px-2" type="button" onclick="abrirSelectorFechaHoraFacil('gen-hoja-input-fecha-ev', 'FECHA Y HORA')" title="Elegir fecha y hora en calendario">
+                      <button class="btn btn-outline-secondary px-2" id="btn-cal-fecha-ev-fila" type="button" onclick="abrirSelectorFechaHoraFacil('gen-hoja-input-fecha-ev', 'FECHA Y HORA')" title="Elegir fecha y hora en calendario">
                         <i class="bi bi-calendar-event text-primary"></i>
                       </button>
-                      <button class="btn btn-primary fw-bold px-2" type="button" onclick="ponerFechaHoraAhora('gen-hoja-input-fecha-ev')" title="Poner fecha y hora de ahora mismo">
+                      <button class="btn btn-primary fw-bold px-2" id="btn-ahora-fecha-ev-fila" type="button" onclick="ponerFechaHoraAhora('gen-hoja-input-fecha-ev')" title="Poner fecha y hora de ahora mismo">
                         Ahora
                       </button>
                     </div>
@@ -2737,7 +2742,8 @@
         return enfocarElementoPorId("gen-hoja-vehiculo", false);
       }
       if (id === "gen-hoja-vehiculo" || id === "gen-hoja-input-fecha-ev") {
-        return enfocarElementoPorId(MODO_HOJA_OPERACION === "EVENTO" ? "gen-hoja-input-codigo" : "gen-hoja-input-ods", true);
+        const irDirectoACodigo = (MODO_HOJA_OPERACION === "EVENTO") || (MODO_ODS_BODEGA_HOJA === "GENERAL");
+        return enfocarElementoPorId(irDirectoACodigo ? "gen-hoja-input-codigo" : "gen-hoja-input-ods", true);
       }
       if (id === "gen-hoja-input-ods") {
         return enfocarElementoPorId("gen-hoja-input-codigo", true);
@@ -2774,7 +2780,8 @@
       if (id === "gen-hoja-input-cant") {
         const ok = anotarRenglonEnGeneradorHoja();
         if (ok !== false) {
-          return enfocarElementoPorId(MODO_HOJA_OPERACION === "EVENTO" ? "gen-hoja-input-codigo" : "gen-hoja-input-ods", true);
+          const irACodigo = (MODO_HOJA_OPERACION === "EVENTO") || (MODO_ODS_BODEGA_HOJA === "GENERAL");
+          return enfocarElementoPorId(irACodigo ? "gen-hoja-input-codigo" : "gen-hoja-input-ods", true);
         }
         return false;
       }
@@ -2786,7 +2793,8 @@
       if (id === "gen-hoja-input-obs") {
         const ok = anotarRenglonEnGeneradorHoja();
         if (ok !== false) {
-          return enfocarElementoPorId(MODO_HOJA_OPERACION === "EVENTO" ? "gen-hoja-input-codigo" : "gen-hoja-input-ods", true);
+          const irACodigo = (MODO_HOJA_OPERACION === "EVENTO") || (MODO_ODS_BODEGA_HOJA === "GENERAL");
+          return enfocarElementoPorId(irACodigo ? "gen-hoja-input-codigo" : "gen-hoja-input-ods", true);
         }
         return false;
       }
@@ -5536,14 +5544,18 @@
         let filasHtml = "";
 
         if (!esEvento) {
+          const usarDittoOdsGeneral = !!v.es_ods_general_bodega;
           for (let i = 0; i < totalFilasPagina; i++) {
             const it = itemsPagina[i];
             if (it) {
-              const fechaEvFmt = formatearFechaHoraHojaDMY(it.fecha_montaje || "");
+              const idxGlobal = (idxPag * MAX_FILAS_POR_HOJA) + i;
+              const esRepeticionOdsGen = usarDittoOdsGeneral && idxGlobal > 0;
+              const fechaEvFmt = esRepeticionOdsGen ? "〃" : formatearFechaHoraHojaDMY(it.fecha_montaje || "");
+              const odsFmt = esRepeticionOdsGen ? "〃" : (it.id_ods || "");
               filasHtml += `
                 <tr>
-                  <td class="center">${fechaEvFmt}</td>
-                  <td class="center bold">${it.id_ods || ""}</td>
+                  <td class="center${esRepeticionOdsGen ? ' bold' : ''}">${fechaEvFmt}</td>
+                  <td class="center bold">${odsFmt}</td>
                   <td class="center bold">${it.codigo_art || ""}</td>
                   <td>${it.nombre_art || ""}</td>
                   <td class="center bold">${it.cant_enviada || ""}</td>
@@ -5626,7 +5638,7 @@
           <title>${esEvento ? 'ENTREGA DE ARTICULOS A OP' : 'HOJA DE TRASLADO'} · ${v.id_viaje} · ${areaImpresa}</title>
           <style>
             @page {
-              size: landscape;
+              size: letter landscape;
               margin: 7mm 9mm;
             }
             * {
@@ -5804,7 +5816,103 @@
     // SUB-MÓDULO 4: GENERADOR INDEPENDIENTE DE HOJAS DE TRASLADO / OPERACIÓN
     // =========================================================================
     let MODO_HOJA_OPERACION = "BODEGA"; // 'BODEGA' | 'EVENTO'
+    let MODO_ODS_BODEGA_HOJA = "INDIVIDUAL"; // 'INDIVIDUAL' | 'GENERAL'
+    let ODS_GENERAL_FIJA_BODEGA = "";
+    let FECHA_GENERAL_FIJA_BODEGA = "";
     let RENGLONES_GENERADOR_HOJA = [];
+
+    function aplicarCandadoCamposOdsGeneralFila(bloquear) {
+      const inpFecha = document.getElementById("gen-hoja-input-fecha-ev");
+      const inpOds = document.getElementById("gen-hoja-input-ods");
+      const btnCal = document.getElementById("btn-cal-fecha-ev-fila");
+      const btnAhora = document.getElementById("btn-ahora-fecha-ev-fila");
+      const lblTh = document.getElementById("lbl-th-ods-bodega");
+      const chk = document.getElementById("chk-ods-general-bodega");
+
+      if (chk) chk.checked = !!bloquear;
+      if (lblTh) {
+        lblTh.textContent = bloquear ? "ODS GENERAL" : "ODS";
+        lblTh.classList.toggle("text-primary", !!bloquear);
+      }
+      if (inpFecha) {
+        inpFecha.readOnly = !!bloquear;
+        inpFecha.style.opacity = bloquear ? "0.85" : "1";
+      }
+      if (inpOds) {
+        inpOds.readOnly = !!bloquear;
+        inpOds.style.opacity = bloquear ? "0.85" : "1";
+      }
+      if (btnCal) btnCal.disabled = !!bloquear;
+      if (btnAhora) btnAhora.disabled = !!bloquear;
+      if (bloquear) {
+        document.getElementById("gen-hoja-suggest-ods-fila")?.classList.add("d-none");
+      }
+    }
+
+    function alAlternarCheckOdsGeneralBodega(activado) {
+      const inpFecha = document.getElementById("gen-hoja-input-fecha-ev");
+      const inpOds = document.getElementById("gen-hoja-input-ods");
+
+      if (activado) {
+        let odsBase = (inpOds?.value || "").trim();
+        let fechaBase = (inpFecha?.value || "").trim();
+
+        // Si ya había anotado al menos 1 artículo y el input quedó vacío, tomar la ODS y Fecha del 1er artículo
+        if (!odsBase && RENGLONES_GENERADOR_HOJA.length > 0) {
+          odsBase = RENGLONES_GENERADOR_HOJA[0].id_ods || "";
+          fechaBase = RENGLONES_GENERADOR_HOJA[0].fecha_montaje || "";
+        }
+
+        if (!odsBase) {
+          const chk = document.getElementById("chk-ods-general-bodega");
+          if (chk) chk.checked = false;
+          Swal.fire({
+            toast: true,
+            position: "top-end",
+            icon: "info",
+            title: "Primero llena la ODS abajo y luego marca el check para fijarla como ODS GENERAL",
+            showConfirmButton: false,
+            timer: 2200
+          });
+          enfocarElementoPorId("gen-hoja-input-ods", true);
+          return;
+        }
+
+        if (!fechaBase) {
+          const odsInfo = (STATE.ods || []).find(o => String(o.id_ods).trim().toLowerCase() === odsBase.toLowerCase());
+          fechaBase = (odsInfo && odsInfo.fecha_montaje)
+            ? formatearFechaHoraHojaDMY(odsInfo.fecha_montaje)
+            : obtenerFechaActualFormatoHoja();
+        } else {
+          fechaBase = formatearFechaHoraHojaDMY(fechaBase);
+        }
+
+        MODO_ODS_BODEGA_HOJA = "GENERAL";
+        ODS_GENERAL_FIJA_BODEGA = odsBase;
+        FECHA_GENERAL_FIJA_BODEGA = fechaBase;
+
+        if (inpOds) inpOds.value = odsBase;
+        if (inpFecha) inpFecha.value = fechaBase;
+
+        aplicarCandadoCamposOdsGeneralFila(true);
+
+        // Si ya había artículos en la hoja, unificarlos con la ODS General y Fecha General
+        if (RENGLONES_GENERADOR_HOJA.length > 0) {
+          RENGLONES_GENERADOR_HOJA.forEach(r => {
+            r.id_ods = odsBase;
+            r.fecha_montaje = fechaBase;
+          });
+        }
+        renderizarRenglonesGeneradorHoja();
+        enfocarElementoPorId("gen-hoja-input-codigo", true);
+      } else {
+        MODO_ODS_BODEGA_HOJA = "INDIVIDUAL";
+        ODS_GENERAL_FIJA_BODEGA = "";
+        FECHA_GENERAL_FIJA_BODEGA = "";
+        aplicarCandadoCamposOdsGeneralFila(false);
+        renderizarRenglonesGeneradorHoja();
+      }
+    }
 
     function deslizarCarruselHoja(idContenedor, deltaX) {
       const el = document.getElementById(idContenedor);
@@ -5928,8 +6036,10 @@
 
       if (formVal && el) {
         el.value = formVal;
+        if (idInput === "gen-hoja-fecha-ev-bodega-gen") sincronizarCamposOdsGeneralBodegaHaciaFila();
       } else if (Swal.getDenyButton && formVal === false && el) {
         el.value = obtenerFechaActualFormatoHoja();
+        if (idInput === "gen-hoja-fecha-ev-bodega-gen") sincronizarCamposOdsGeneralBodegaHaciaFila();
       }
     }
 
@@ -5938,6 +6048,9 @@
       const esEvento = modo === "EVENTO";
       document.getElementById("pill-hoja-op-bodega").classList.toggle("active", !esEvento);
       document.getElementById("pill-hoja-op-evento").classList.toggle("active", esEvento);
+
+      const boxModoOdsBod = document.getElementById("gen-hoja-box-modo-ods-bodega");
+      if (boxModoOdsBod) boxModoOdsBod.classList.toggle("d-none", esEvento);
 
       const area = (document.getElementById("gen-hoja-area")?.value || "BONFIL MOBILIARIO").toUpperCase();
       const bodegaBase = area.startsWith("BONFIL") ? "BONFIL" : area;
@@ -6099,6 +6212,8 @@
     }
 
     function alEscribirOdsEnFilaGenerador(valorOds) {
+      const inpOds = document.getElementById("gen-hoja-input-ods");
+      if (inpOds && inpOds.readOnly) return;
       const q = String(valorOds || "").trim().toLowerCase();
       const box = document.getElementById("gen-hoja-suggest-ods-fila");
 
@@ -6248,12 +6363,15 @@
       const odsInfo = (STATE.ods || []).find(o => String(o.id_ods) === String(z.id_ods)) || {};
       const fechaMont = formatearFechaHoraHojaDMY(z.fecha_montaje || odsInfo.fecha_montaje || "");
       const locNom = z.locacion_nombre || odsInfo.locacion_nombre || "";
+      const esOdsGenBodega = (MODO_HOJA_OPERACION !== "EVENTO" && MODO_ODS_BODEGA_HOJA === "GENERAL");
 
       document.getElementById("gen-hoja-input-id-reg").value = z.id_reg;
-      document.getElementById("gen-hoja-input-fecha-ev").value = MODO_HOJA_OPERACION === "EVENTO"
-        ? obtenerFechaActualFormatoHoja()
-        : fechaMont;
-      document.getElementById("gen-hoja-input-ods").value = z.id_ods || "";
+      if (!esOdsGenBodega) {
+        document.getElementById("gen-hoja-input-fecha-ev").value = MODO_HOJA_OPERACION === "EVENTO"
+          ? obtenerFechaActualFormatoHoja()
+          : fechaMont;
+        document.getElementById("gen-hoja-input-ods").value = z.id_ods || "";
+      }
       document.getElementById("gen-hoja-input-codigo").value = z.codigo_art || "";
       document.getElementById("gen-hoja-input-descripcion").value = z.nombre_art || "";
       const inpCant = document.getElementById("gen-hoja-input-cant");
@@ -6323,11 +6441,12 @@
         }
       }
 
+      const mantenerOdsGen = (MODO_HOJA_OPERACION !== "EVENTO" && MODO_ODS_BODEGA_HOJA === "GENERAL");
       const odsInput = document.getElementById("gen-hoja-input-ods").value.trim();
       const odsCab = (document.getElementById("gen-hoja-ods-evento")?.value || "").trim();
-      const ods = odsInput || (matchZona && matchZona.id_ods ? String(matchZona.id_ods) : "") || odsCab || "S/N";
+      const ods = (mantenerOdsGen ? (ODS_GENERAL_FIJA_BODEGA || odsInput) : odsInput) || (matchZona && matchZona.id_ods ? String(matchZona.id_ods) : "") || odsCab || "S/N";
 
-      const fechaCol1Raw = document.getElementById("gen-hoja-input-fecha-ev").value.trim();
+      const fechaCol1Raw = (mantenerOdsGen ? (FECHA_GENERAL_FIJA_BODEGA || document.getElementById("gen-hoja-input-fecha-ev").value.trim()) : document.getElementById("gen-hoja-input-fecha-ev").value.trim());
       const fechaZonaRaw = (matchZona && matchZona.fecha_montaje) ? matchZona.fecha_montaje : "";
       const fechaCol1 = fechaCol1Raw
         ? formatearFechaHoraHojaDMY(fechaCol1Raw)
@@ -6362,8 +6481,12 @@
       });
 
       document.getElementById("gen-hoja-input-id-reg").value = "";
-      document.getElementById("gen-hoja-input-fecha-ev").value = MODO_HOJA_OPERACION === "EVENTO" ? obtenerFechaActualFormatoHoja() : "";
-      document.getElementById("gen-hoja-input-ods").value = "";
+      document.getElementById("gen-hoja-input-fecha-ev").value = MODO_HOJA_OPERACION === "EVENTO"
+        ? obtenerFechaActualFormatoHoja()
+        : (mantenerOdsGen ? (FECHA_GENERAL_FIJA_BODEGA || fechaCol1) : "");
+      document.getElementById("gen-hoja-input-ods").value = mantenerOdsGen
+        ? (ODS_GENERAL_FIJA_BODEGA || ods)
+        : "";
       document.getElementById("gen-hoja-input-codigo").value = "";
       document.getElementById("gen-hoja-input-descripcion").value = "";
       document.getElementById("gen-hoja-input-cant").value = "1";
@@ -6378,7 +6501,8 @@
 
       const scroller = document.getElementById("scroll-hoja-generador");
       if (scroller) scroller.scrollTo({ left: 0, behavior: "smooth" });
-      enfocarElementoPorId(MODO_HOJA_OPERACION === "EVENTO" ? "gen-hoja-input-codigo" : "gen-hoja-input-ods", true);
+      const irDirectoACodigo = (MODO_HOJA_OPERACION === "EVENTO") || mantenerOdsGen;
+      enfocarElementoPorId(irDirectoACodigo ? "gen-hoja-input-codigo" : "gen-hoja-input-ods", true);
       return true;
     }
 
@@ -6386,16 +6510,21 @@
       const tbody = document.getElementById("gen-hoja-tbody-renglones");
       if (!tbody) return;
       const esEvento = MODO_HOJA_OPERACION === "EVENTO";
+      const usarDittoOdsGen = !esEvento && MODO_ODS_BODEGA_HOJA === "GENERAL";
       const colSpanVacio = esEvento ? 11 : 7;
 
       if (RENGLONES_GENERADOR_HOJA.length === 0) {
         tbody.innerHTML = `<tr><td colspan="${colSpanVacio}" class="text-center text-muted small py-4">Aún no hay renglones anotados en esta hoja.</td></tr>`;
         return;
       }
-      tbody.innerHTML = RENGLONES_GENERADOR_HOJA.map((it, idx) => `
+      tbody.innerHTML = RENGLONES_GENERADOR_HOJA.map((it, idx) => {
+        const esDitto = usarDittoOdsGen && idx > 0;
+        const txtFecha = esDitto ? '<strong>〃</strong>' : ((esEvento ? it.fecha_entrega : it.fecha_montaje) || '---');
+        const txtOds = esDitto ? '〃' : `ODS #${it.id_ods || 'S/N'}`;
+        return `
         <tr>
-          <td class="text-center small">${(esEvento ? it.fecha_entrega : it.fecha_montaje) || '---'}</td>
-          ${esEvento ? '' : `<td class="text-center fw-bold">ODS #${it.id_ods || 'S/N'}</td>`}
+          <td class="text-center small">${txtFecha}</td>
+          ${esEvento ? '' : `<td class="text-center fw-bold">${txtOds}</td>`}
           <td class="text-center fw-bold">${it.codigo_art}</td>
           <td><strong>${it.nombre_art}</strong></td>
           <td class="text-center fw-bold text-primary">${it.cant_enviada}</td>
@@ -6413,11 +6542,16 @@
             </button>
           </td>
         </tr>
-      `).join("");
+      `;
+      }).join("");
     }
 
     function limpiarGeneradorHojaOperacion() {
       RENGLONES_GENERADOR_HOJA = [];
+      MODO_ODS_BODEGA_HOJA = "INDIVIDUAL";
+      ODS_GENERAL_FIJA_BODEGA = "";
+      FECHA_GENERAL_FIJA_BODEGA = "";
+      aplicarCandadoCamposOdsGeneralFila(false);
       // Reiniciar TODA la hoja a sus valores por defecto iniciales
       document.getElementById("gen-hoja-fecha").value = obtenerFechaActualFormatoHoja();
 
@@ -6425,6 +6559,8 @@
         "gen-hoja-chofer",
         "gen-hoja-encargado",
         "gen-hoja-ods-evento",
+        "gen-hoja-ods-bodega-gen",
+        "gen-hoja-fecha-ev-bodega-gen",
         "gen-hoja-lugar-input",
         "gen-hoja-vehiculo",
         "gen-hoja-input-id-reg",
@@ -6486,6 +6622,7 @@
       const viajeTemp = {
         id_viaje: idTemp,
         modo_hoja: MODO_HOJA_OPERACION,
+        es_ods_general_bodega: MODO_HOJA_OPERACION !== "EVENTO" && MODO_ODS_BODEGA_HOJA === "GENERAL",
         tipo_viaje: MODO_HOJA_OPERACION === "EVENTO" ? "ENVIO_EVENTO" : "ENTRE_BODEGAS",
         bodega_origen: areaImpresa.startsWith("BONFIL") ? "BONFIL" : areaImpresa,
         area_impresa: areaImpresa,
@@ -7553,6 +7690,27 @@
       return [linea1, linea2];
     }
 
+    function ajustarFuenteTextoCompleto(ctx, texto, maxPx, minPx, maxAncho) {
+      let sz = maxPx;
+      ctx.font = `900 ${sz}px Arial, Helvetica, sans-serif`;
+      while (sz > minPx && ctx.measureText(texto).width > maxAncho) {
+        sz -= 1;
+        ctx.font = `900 ${sz}px Arial, Helvetica, sans-serif`;
+      }
+      return sz;
+    }
+
+    function truncarTextoUnRenglon(ctx, texto, maxAnchoPx) {
+      const limpio = String(texto || "").trim().replace(/\s+/g, " ");
+      if (!limpio) return "";
+      if (ctx.measureText(limpio).width <= maxAnchoPx) return limpio;
+      let corte = limpio;
+      while (corte.length > 1 && ctx.measureText(corte + "...").width > maxAnchoPx) {
+        corte = corte.slice(0, -1).trim();
+      }
+      return corte + "...";
+    }
+
     async function renderizarEtiquetaCanvas(d) {
       const canvas = document.getElementById("labelCanvas");
       const ctx = canvas.getContext("2d");
@@ -7572,61 +7730,61 @@
 
       // 1. Logo Zúñiga Deco Cancún (si el checkbox "Incluir logo Zúñiga" está activo)
       if (incluirLogo) {
-        ctx.drawImage(imgLogo, 18, 22, 126, 126);
+        ctx.drawImage(imgLogo, 12, 20, 122, 122);
       }
 
       ctx.fillStyle = "#000000";
 
-      // 2. Título "ODS" centrado exactamente encima del número de la ODS
+      const xDer = incluirLogo ? 140 : 18;
+      const maxAnchoDer = 372 - xDer; // 232px con logo, 354px sin logo
+
+      // 2. Título "ODS" y número de ODS (COMPLETO SÍ O SÍ, letra extra grande y autoajustable)
       const strOds = String(d.ods || "");
-      ctx.font = "900 20px Arial, Helvetica, sans-serif";
+      ajustarFuenteTextoCompleto(ctx, strOds, 28, 16, maxAnchoDer);
       const anchoNumOds = ctx.measureText(strOds).width;
-      const anchoTitOds = ctx.measureText("ODS").width;
-      const anchoBloqueOds = Math.max(anchoNumOds, anchoTitOds, 64);
-      const centroOdsX = 156 + (anchoBloqueOds / 2);
+      const anchoBloqueOds = Math.min(maxAnchoDer, Math.max(anchoNumOds, 78));
+      const centroOdsX = xDer + (anchoBloqueOds / 2);
 
       ctx.textAlign = "center";
-      ctx.font = "900 19px Arial, Helvetica, sans-serif";
-      ctx.fillText("ODS", centroOdsX, 30);
+      ctx.font = "900 20px Arial, Helvetica, sans-serif";
+      ctx.fillText("ODS", centroOdsX, 24);
 
-      ctx.font = "900 21px Arial, Helvetica, sans-serif";
-      ctx.fillText(strOds, centroOdsX, 52);
+      ajustarFuenteTextoCompleto(ctx, strOds, 28, 16, maxAnchoDer);
+      ctx.fillText(strOds, centroOdsX, 53);
 
-      // 3. C.OP (Código del Artículo)
+      // 3. C.OP (Código del Artículo - COMPLETO SÍ O SÍ, letra más grande)
       ctx.textAlign = "left";
-      ctx.font = "900 19px Arial, Helvetica, sans-serif";
-      ctx.fillText("C.OP: " + String(d.cop || ""), 156, 77);
+      const txtCop = "C.OP: " + String(d.cop || "");
+      ajustarFuenteTextoCompleto(ctx, txtCop, 25, 15, maxAnchoDer);
+      ctx.fillText(txtCop, xDer, 83);
 
-      // 4. Locación (Hotel) repartido en hasta 2 renglones
-      ctx.drawImage(ico2, 156, 88, 22, 22);
-      ctx.font = "900 16px Arial, Helvetica, sans-serif";
-      const [locRenglon1, locRenglon2] = dividirTextoDosRenglones(ctx, String(d.locacion || ""), 186);
-      if (locRenglon2) {
-        ctx.fillText(locRenglon1, 182, 102);
-        ctx.fillText(locRenglon2, 182, 120);
-      } else {
-        ctx.fillText(locRenglon1, 182, 108);
-      }
+      // 4. Locación (Hotel) en 1 SOLO RENGLÓN con letra grande y muy clara (22px)
+      ctx.drawImage(ico2, xDer, 96, 24, 24);
+      ctx.font = "900 22px Arial, Helvetica, sans-serif";
+      const maxAnchoLoc = 372 - (xDer + 28);
+      const locUnRenglon = truncarTextoUnRenglon(ctx, String(d.locacion || ""), maxAnchoLoc);
+      ctx.fillText(locUnRenglon, xDer + 28, 117);
 
-      // 5. Fecha y Hora en formato exacto: "01-Nov-2026 20:00"
+      // 5. Fecha y Hora en 1 SOLO RENGLÓN: "01-Nov-2026 20:00" (COMPLETA SÍ O SÍ, letra grande)
       const fechaFormateada = formatearFechaEtiquetaDMY(d.fechaEvento);
-      ctx.drawImage(ico3, 156, 134, 22, 22);
-      ctx.font = "900 16px Arial, Helvetica, sans-serif";
-      ctx.fillText(fechaFormateada, 182, 152);
+      ctx.drawImage(ico3, xDer, 132, 24, 24);
+      ajustarFuenteTextoCompleto(ctx, fechaFormateada, 20, 15, maxAnchoLoc);
+      ctx.fillText(fechaFormateada, xDer + 28, 153);
 
       // 6. Línea divisoria horizontal
-      ctx.fillRect(18, 168, 348, 2);
+      ctx.fillRect(14, 166, 356, 3);
 
-      // 7. Nombre del artículo repartido en hasta 2 renglones
-      ctx.drawImage(ico1, 20, 184, 30, 30);
-      ctx.font = "900 16px Arial, Helvetica, sans-serif";
-      const [renglon1, renglon2] = dividirTextoDosRenglones(ctx, String(d.nombreArticulo || ""), 306);
+      // 7. Nombre del artículo (ÚNICO CAMPO EN 2 RENGLONES, letra grande y clara)
+      ctx.drawImage(ico1, 14, 186, 34, 34);
+      ctx.font = "900 20px Arial, Helvetica, sans-serif";
+      const [renglon1, renglon2] = dividirTextoDosRenglones(ctx, String(d.nombreArticulo || ""), 316);
 
       if (renglon2) {
-        ctx.fillText(renglon1, 58, 194);
-        ctx.fillText(renglon2, 58, 215);
+        ctx.fillText(renglon1, 54, 196);
+        ctx.fillText(renglon2, 54, 221);
       } else {
-        ctx.fillText(renglon1, 58, 204);
+        ajustarFuenteTextoCompleto(ctx, renglon1, 22, 19, 316);
+        ctx.fillText(renglon1, 54, 209);
       }
 
       const msg = document.getElementById("etq-msg");
