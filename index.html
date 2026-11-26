@@ -3627,8 +3627,8 @@
           }
         }
       } else {
-        const exactoNom = arts.find(a => String(a.nombre).toLowerCase() === q);
-        if (exactoNom && inpCod) inpCod.value = exactoNom.codigo;
+        const exactosNom = arts.filter(a => String(a.nombre).toLowerCase() === q);
+        if (exactosNom.length === 1 && inpCod) inpCod.value = exactosNom[0].codigo;
 
         const coincidencias = arts.filter(a => String(a.nombre).toLowerCase().includes(q) || String(a.codigo).toLowerCase().includes(q)).slice(0, 12);
         if (boxNom) {
@@ -4379,11 +4379,10 @@
         return false;
       }
 
-      // Validar que el artículo exista obligatoriamente en la base de datos (sin importar de qué tipo sea, se puede meter a cualquier zona)
-      const artCat = (STATE.catalogos.articulos || []).find(a =>
-        (codigo && String(a.codigo || "").trim().toLowerCase() === codigo.toLowerCase()) ||
-        (nombre && String(a.nombre || "").trim().toLowerCase() === nombre.toLowerCase())
-      );
+      // Validar que el artículo exista obligatoriamente en la base de datos (si hay código escrito/seleccionado, buscar estrictamente por código para respetar artículos con mismo nombre y distinto código)
+      const artCat = codigo
+        ? (STATE.catalogos.articulos || []).find(a => String(a.codigo || "").trim().toLowerCase() === codigo.toLowerCase())
+        : (STATE.catalogos.articulos || []).find(a => String(a.nombre || "").trim().toLowerCase() === nombre.toLowerCase());
       if (!artCat) {
         Swal.fire(
           "Artículo no registrado",
@@ -5103,29 +5102,27 @@
       const codEscrito = codRaw.toLowerCase();
       const desEscrita = desRaw.toLowerCase();
 
-      // Si no tocó el dropdown pero escribió exacto el código o nombre de un único artículo en su zona, resolverlo
+      // Si no tocó el dropdown pero escribió exacto el código o nombre de un artículo en su zona, resolverlo priorizando siempre el código
       let z = idReg ? (STATE.zonas || []).find(x => String(x.id_reg) === String(idReg)) : null;
       if (!z && (codEscrito || desEscrita)) {
         const disp = obtenerItemsDisponiblesEnAreaHoja();
-        z = disp.find(x =>
-          (codEscrito && String(x.codigo_art || "").toLowerCase() === codEscrito) ||
-          (desEscrita && String(x.nombre_art || "").toLowerCase() === desEscrita)
-        );
+        z = codEscrito
+          ? disp.find(x => String(x.codigo_art || "").trim().toLowerCase() === codEscrito)
+          : disp.find(x => String(x.nombre_art || "").trim().toLowerCase() === desEscrita);
       }
 
       const cantInput = Number(document.getElementById("hoja-input-cant").value) || 0;
       const obs = document.getElementById("hoja-input-obs").value.trim();
       const areaActual = document.getElementById("viaje-add-zona-origen")?.value || "BONFIL MOBILIARIO";
 
-      // Si no coincide con ningún artículo de su zona, revisar si coincide con el catálogo o pasarlo como EXTRA
+      // Si no coincide con ningún artículo de su zona, revisar si coincide con el catálogo (priorizando código) o pasarlo como EXTRA
       if (!z) {
         if ((!desRaw && !codRaw) || cantInput <= 0) {
           return Swal.fire("Faltan datos", "Escribe el artículo de tu Zona (o el código/descripción si es un EXTRA) e indica la cantidad.", "warning");
         }
-        const artCatMatch = (STATE.catalogos.articulos || []).find(a =>
-          (codEscrito && String(a.codigo || "").trim().toLowerCase() === codEscrito) ||
-          (desEscrita && String(a.nombre || "").trim().toLowerCase() === desEscrita)
-        );
+        const artCatMatch = codEscrito
+          ? (STATE.catalogos.articulos || []).find(a => String(a.codigo || "").trim().toLowerCase() === codEscrito)
+          : (STATE.catalogos.articulos || []).find(a => String(a.nombre || "").trim().toLowerCase() === desEscrita);
         const codExtra = artCatMatch ? artCatMatch.codigo : (codRaw && desRaw ? codRaw.toUpperCase() : "EXTRA");
         const desExtra = artCatMatch ? artCatMatch.nombre : (desRaw || codRaw);
         const odsExtra = document.getElementById("hoja-input-ods").value.trim() || "EXTRA";
@@ -6264,6 +6261,7 @@
     }
 
     function filtrarZonaEnGeneradorHoja(campo, valor) {
+      document.getElementById("gen-hoja-input-id-reg").value = "";
       const area = (document.getElementById("gen-hoja-area")?.value || "").toUpperCase();
       const q = String(valor || "").trim().toLowerCase();
       const boxCod = document.getElementById("gen-hoja-suggest-codigo");
@@ -6395,27 +6393,35 @@
     }
 
     function anotarRenglonEnGeneradorHoja() {
+      const idRegSel = (document.getElementById("gen-hoja-input-id-reg")?.value || "").trim();
       const codRaw = document.getElementById("gen-hoja-input-codigo").value.trim();
       const desRaw = document.getElementById("gen-hoja-input-descripcion").value.trim();
       const codLower = codRaw.toLowerCase();
       const desLower = desRaw.toLowerCase();
       const area = (document.getElementById("gen-hoja-area")?.value || "").toUpperCase();
 
-      // Si el usuario escribió un código o nombre exacto sin pulsar la lista desplegable, autocompletar desde Zona o Catálogo
+      // Resolver artículo:
+      // 1) Si seleccionó un renglón específico de Zona (idRegSel), usarlo directamente.
+      // 2) Si hay un código escrito/seleccionado (codLower), buscar ESTRICTAMENTE por código (para no confundir 2 códigos distintos que tengan el mismo nombre).
+      // 3) Solo si el campo código está vacío, buscar por descripción (desLower).
       let matchZona = null;
       let matchCat = null;
-      if (codLower || desLower) {
-        matchZona = (STATE.zonas || []).find(z =>
-          String(z.zona || "").toUpperCase() === area &&
-          Number(z.cantidad) > 0 &&
-          ((codLower && String(z.codigo_art || "").trim().toLowerCase() === codLower) ||
-           (desLower && String(z.nombre_art || "").trim().toLowerCase() === desLower))
+      if (idRegSel) {
+        matchZona = (STATE.zonas || []).find(z => String(z.id_reg) === String(idRegSel));
+      }
+      if (!matchZona && (codLower || desLower)) {
+        const zonasArea = (STATE.zonas || []).filter(z =>
+          String(z.zona || "").toUpperCase() === area && Number(z.cantidad) > 0
         );
+        matchZona = codLower
+          ? zonasArea.find(z => String(z.codigo_art || "").trim().toLowerCase() === codLower)
+          : zonasArea.find(z => String(z.nombre_art || "").trim().toLowerCase() === desLower);
+
         if (!matchZona) {
-          matchCat = (STATE.catalogos.articulos || []).find(a =>
-            (codLower && String(a.codigo || "").trim().toLowerCase() === codLower) ||
-            (desLower && String(a.nombre || "").trim().toLowerCase() === desLower)
-          );
+          const artsCat = STATE.catalogos.articulos || [];
+          matchCat = codLower
+            ? artsCat.find(a => String(a.codigo || "").trim().toLowerCase() === codLower)
+            : artsCat.find(a => String(a.nombre || "").trim().toLowerCase() === desLower);
         }
       }
 
