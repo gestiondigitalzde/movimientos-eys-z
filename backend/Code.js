@@ -582,6 +582,11 @@ function _leerCatalogosExternos() {
   };
 
   // A. Leer INVENTARIO (encabezados en fila 3, datos desde fila 4)
+  // A. Leer INVENTARIO (Artículos)
+  function _limpiarLineaCat(v) {
+    return String(v || "").replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim();
+  }
+
   try {
     const ssInv = SpreadsheetApp.openById(EYS_CONFIG.IDS.SS_INVENTARIO);
     const sheetInv = ssInv.getSheetByName("INVENTARIO");
@@ -589,8 +594,8 @@ function _leerCatalogosExternos() {
       const dataInv = sheetInv.getDataRange().getValues();
       for (let i = 3; i < dataInv.length; i++) {
         const fila = dataInv[i];
-        const codigo = String(fila[1] || "").trim();
-        const nombre = String(fila[2] || "").trim();
+        const codigo = _limpiarLineaCat(fila[1]);
+        const nombre = _limpiarLineaCat(fila[2]);
         if (!codigo && !nombre) continue;
         const estadoFila = String(fila[15] || "").trim().toUpperCase();
         if (estadoFila === "INACTIVO" || estadoFila === "BAJA") continue;
@@ -598,9 +603,9 @@ function _leerCatalogosExternos() {
         resultado.articulos.push({
           codigo: codigo,
           nombre: nombre,
-          tipo: String(fila[3] || "MOBILIARIO").trim(),
+          tipo: _limpiarLineaCat(fila[3] || "MOBILIARIO"),
           foto: _normalizarUrlFotoDrive(fila[4]),
-          bodega_origen: String(fila[11] || "").trim()
+          bodega_origen: _limpiarLineaCat(fila[11])
         });
       }
     }

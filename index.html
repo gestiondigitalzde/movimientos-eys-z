@@ -3188,6 +3188,49 @@
     // =========================================================================
     // COMUNICACIÓN CON GOOGLE APPS SCRIPT Y CACHÉ INSTANTÁNEO
     // =========================================================================
+    function limpiarTextoUnaLinea(val) {
+      return String(val || "").replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim();
+    }
+
+    function escaparArgOnclick(val) {
+      return limpiarTextoUnaLinea(val)
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'")
+        .replace(/"/g, "&quot;");
+    }
+
+    function sanitizarDatosEstado() {
+      if (STATE.catalogos) {
+        (STATE.catalogos.articulos || []).forEach(a => {
+          a.codigo = limpiarTextoUnaLinea(a.codigo);
+          a.nombre = limpiarTextoUnaLinea(a.nombre);
+          a.tipo = limpiarTextoUnaLinea(a.tipo);
+        });
+        (STATE.catalogos.locaciones || []).forEach(l => {
+          l.nombre = limpiarTextoUnaLinea(l.nombre);
+        });
+        (STATE.catalogos.vendedores || []).forEach(v => {
+          v.nombre = limpiarTextoUnaLinea(v.nombre);
+        });
+        (STATE.catalogos.choferes || []).forEach(c => {
+          c.nombre = limpiarTextoUnaLinea(c.nombre);
+          c.puesto = limpiarTextoUnaLinea(c.puesto);
+        });
+      }
+      (STATE.zonas || []).forEach(z => {
+        z.codigo_art = limpiarTextoUnaLinea(z.codigo_art);
+        z.nombre_art = limpiarTextoUnaLinea(z.nombre_art);
+        z.locacion_nombre = limpiarTextoUnaLinea(z.locacion_nombre);
+        z.nombre_evento = limpiarTextoUnaLinea(z.nombre_evento);
+      });
+      (STATE.ods || []).forEach(o => {
+        o.id_ods = limpiarTextoUnaLinea(o.id_ods);
+        o.nombre_evento = limpiarTextoUnaLinea(o.nombre_evento);
+        o.locacion_nombre = limpiarTextoUnaLinea(o.locacion_nombre);
+        o.vendedor_nombre = limpiarTextoUnaLinea(o.vendedor_nombre);
+      });
+    }
+
     function guardarCacheLocal() {
       try {
         localStorage.setItem("eys_z_cache_data", JSON.stringify({
@@ -3212,6 +3255,7 @@
         if (parsed.viajes) STATE.viajes = parsed.viajes;
         if (parsed.historial) STATE.historial = parsed.historial;
         if (parsed.permisos) STATE.permisos = parsed.permisos;
+        sanitizarDatosEstado();
         poblarSelectoresCatalogos();
         actualizarInsigniaRolPermisosUI();
         actualizarContadoresMenu();
@@ -3250,6 +3294,7 @@
           STATE.viajes = data.viajes || [];
           STATE.historial = data.historial || [];
           STATE.permisos = data.permisos || [];
+          sanitizarDatosEstado();
           guardarCacheLocal();
           poblarSelectoresCatalogos();
           actualizarInsigniaRolPermisosUI();
@@ -3618,7 +3663,7 @@
             boxCod.classList.add("d-none");
           } else {
             boxCod.innerHTML = coincidencias.map(a => `
-              <div class="suggest-item d-flex justify-content-between align-items-center" onclick="seleccionarArticuloSugerido('${prefijo}', '${a.codigo.replace(/'/g, "\\'")}', '${a.nombre.replace(/'/g, "\\'")}')">
+              <div class="suggest-item d-flex justify-content-between align-items-center" onclick="seleccionarArticuloSugerido('${prefijo}', '${escaparArgOnclick(a.codigo)}', '${escaparArgOnclick(a.nombre)}')">
                 <span class="fw-bold text-primary">${a.codigo}</span>
                 <span class="text-truncate ms-2">${a.nombre}</span>
               </div>
@@ -3636,7 +3681,7 @@
             boxNom.classList.add("d-none");
           } else {
             boxNom.innerHTML = coincidencias.map(a => `
-              <div class="suggest-item d-flex justify-content-between align-items-center" onclick="seleccionarArticuloSugerido('${prefijo}', '${a.codigo.replace(/'/g, "\\'")}', '${a.nombre.replace(/'/g, "\\'")}')">
+              <div class="suggest-item d-flex justify-content-between align-items-center" onclick="seleccionarArticuloSugerido('${prefijo}', '${escaparArgOnclick(a.codigo)}', '${escaparArgOnclick(a.nombre)}')">
                 <span class="fw-semibold text-truncate">${a.nombre}</span>
                 <span class="badge bg-primary bg-opacity-10 text-primary ms-2">${a.codigo}</span>
               </div>
@@ -6320,7 +6365,7 @@
       if (coincidenciasCat.length > 0) {
         html += `<div class="px-2 py-1 bg-light border-bottom small fw-bold text-secondary">Del Catálogo General de Artículos:</div>`;
         html += coincidenciasCat.map(a => `
-          <div class="suggest-item d-flex justify-content-between align-items-center gap-2" onclick="seleccionarArticuloCatalogoEnGeneradorHoja('${String(a.codigo || "").replace(/'/g, "\\'")}', '${String(a.nombre || "").replace(/'/g, "\\'")}')">
+          <div class="suggest-item d-flex justify-content-between align-items-center gap-2" onclick="seleccionarArticuloCatalogoEnGeneradorHoja('${escaparArgOnclick(a.codigo)}', '${escaparArgOnclick(a.nombre)}')">
             <div class="flex-grow-1" style="min-width: 0; line-height: 1.35;">
               <span class="badge bg-secondary me-1">${a.codigo}</span><strong class="text-break">${a.nombre}</strong>
             </div>
